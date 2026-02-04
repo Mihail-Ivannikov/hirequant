@@ -10,7 +10,6 @@ export default function LandingPage() {
       <main>
         <HeroSection />
         <AIProcessSection />
-        {/* We can add FeaturesGrid later if needed */}
       </main>
       <Footer />
     </div>
