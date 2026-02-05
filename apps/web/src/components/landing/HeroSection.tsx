@@ -28,13 +28,15 @@ export function HeroSection() {
 
         {/* The Split - Role Selection */}
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link to="/auth?role=candidate">
+          {/* UPDATED: Links directly to /jobs allowing unauthorized access */}
+          <Link to="/jobs">
             <Button variant="outline" size="lg" className="h-14 min-w-[200px] border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-all">
               <UserSearch className="mr-2 h-5 w-5" />
               I want a Job
             </Button>
           </Link>
 
+          {/* Employer still goes to Auth to register */}
           <Link to="/auth?role=employer">
             <Button size="lg" className="h-14 min-w-[200px] bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
               <Briefcase className="mr-2 h-5 w-5" />
