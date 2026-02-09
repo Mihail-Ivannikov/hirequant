@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { Prisma, Vacancy } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 interface FilterParams {
   search?: string;
@@ -17,12 +17,12 @@ export class VacanciesService {
   async findAll(params: FilterParams) {
     const { search, type, level, minSalary, maxSalary } = params;
 
-    const where: Prisma.VacancyWhereInput = {
-      AND: [],
-    };
+    const where: Prisma.VacancyWhereInput = {};
+    
+    const conditions: Prisma.VacancyWhereInput[] = [];
 
     if (search) {
-      (where.AND as any[]).push({
+      conditions.push({
         OR: [
           { title: { contains: search, mode: 'insensitive' } },
           { company: { contains: search, mode: 'insensitive' } },
@@ -32,17 +32,21 @@ export class VacanciesService {
     }
 
     if (type && type.length > 0) {
-      (where.AND as any[]).push({
+      conditions.push({
         type: { in: type },
       });
     }
 
     if (level && level.length > 0) {
-      (where.AND as any[]).push({
+      conditions.push({
         OR: level.map((l) => ({
           title: { contains: l, mode: 'insensitive' },
         })),
       });
+    }
+
+    if (conditions.length > 0) {
+      where.AND = conditions;
     }
 
     let vacancies = await this.prisma.vacancy.findMany({
@@ -51,7 +55,7 @@ export class VacanciesService {
       include: { employer: true },
     });
 
-    if (minSalary || maxSalary) {
+    if (minSalary !== undefined || maxSalary !== undefined) {
       vacancies = vacancies.filter((job) => {
         const matches = job.salary.match(/(\d+)/g);
         if (!matches || matches.length === 0) return false;
@@ -59,8 +63,8 @@ export class VacanciesService {
         const jobMin = parseInt(matches[0], 10);
         const jobMax = matches.length > 1 ? parseInt(matches[1], 10) : jobMin;
 
-        if (minSalary && jobMax < minSalary) return false;
-        if (maxSalary && jobMin > maxSalary) return false;
+        if (minSalary !== undefined && !isNaN(minSalary) && jobMax < minSalary) return false;
+        if (maxSalary !== undefined && !isNaN(maxSalary) && jobMin > maxSalary) return false;
 
         return true;
       });
@@ -99,5 +103,18 @@ export class VacanciesService {
     });
 
     return Array.from(suggestions).slice(0, 5);
+  }
+
+  async findOne(id: string) {
+    const vacancy = await this.prisma.vacancy.findUnique({
+      where: { id },
+      include: { employer: true },
+    });
+
+    if (!vacancy) {
+      throw new NotFoundException(`Vacancy with ID ${id} not found`);
+    }
+
+    return vacancy;
   }
 }

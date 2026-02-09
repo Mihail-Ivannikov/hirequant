@@ -5,6 +5,7 @@ import { AuthSync } from "@/components/auth/AuthSync";
 import LandingPage from "@/pages/LandingPage";
 import AuthPage from "@/pages/AuthPage";
 import VacancyMarketPage from "@/pages/VacancyMarketPage"; 
+import VacancyDetailsPage from "@/pages/VacancyDetailsPage";
 
 function AuthRedirect() {
   const { isAuthenticated, isLoading } = useAuth0();
@@ -13,7 +14,7 @@ function AuthRedirect() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && location.pathname === '/auth') {
-      navigate('/jobs');
+      navigate('/jobs'); 
     }
   }, [isAuthenticated, isLoading, navigate, location]);
 
@@ -30,6 +31,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/jobs" element={<VacancyMarketPage />} /> 
+        <Route path="/jobs/:id" element={<VacancyDetailsPage />} />
       </Routes>
     </BrowserRouter>
   );

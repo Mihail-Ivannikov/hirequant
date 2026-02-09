@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { VacanciesService } from './vacancies.service';
 
 @Controller('vacancies')
@@ -25,5 +25,12 @@ export class VacanciesController {
   @Get('autocomplete')
   async autocomplete(@Query('query') query: string) {
     return this.vacanciesService.autocomplete(query);
+  }
+
+  // --- NEW ENDPOINT ADDED HERE ---
+  // Must be after 'autocomplete' to avoid routing conflicts
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.vacanciesService.findOne(id);
   }
 }

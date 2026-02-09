@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Sparkles, MapPin, DollarSign, Clock } from "lucide-react";
+import { Link } from "react-router-dom"; 
 
 export interface Job {
   id: string;
@@ -12,7 +13,7 @@ export interface Job {
   type: string;
   postedAt: string;
   skills: string[];
-  matchScore?: number; // Optional: Only if user is logged in & has CV
+  matchScore?: number;
 }
 
 interface JobCardProps {
@@ -20,7 +21,6 @@ interface JobCardProps {
 }
 
 export function JobCard({ job }: JobCardProps) {
-  // Logic: Determine Badge Color based on Score
   const getScoreColor = (score: number) => {
     if (score >= 80) return "bg-green-100 text-green-700 border-green-200";
     if (score >= 50) return "bg-yellow-100 text-yellow-700 border-yellow-200";
@@ -37,7 +37,6 @@ export function JobCard({ job }: JobCardProps) {
           <p className="text-sm font-medium text-slate-500">{job.company}</p>
         </div>
         
-        {/* AI Insight Badge */}
         {job.matchScore && (
           <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-semibold ${getScoreColor(job.matchScore)}`}>
             <Sparkles className="h-3 w-3" />
@@ -47,7 +46,6 @@ export function JobCard({ job }: JobCardProps) {
       </CardHeader>
       
       <CardContent className="pb-4">
-        {/* Metadata Row */}
         <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500">
           <div className="flex items-center gap-1">
             <MapPin className="h-4 w-4" />
@@ -63,7 +61,6 @@ export function JobCard({ job }: JobCardProps) {
           </div>
         </div>
 
-        {/* Tags */}
         <div className="mt-4 flex flex-wrap gap-2">
           {job.skills.map((skill) => (
             <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-200">
@@ -74,9 +71,11 @@ export function JobCard({ job }: JobCardProps) {
       </CardContent>
 
       <CardFooter>
-        <Button className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 border border-indigo-200 shadow-none">
-          View Details
-        </Button>
+        <Link to={`/jobs/${job.id}`} className="w-full">
+          <Button className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 border border-indigo-200 shadow-none">
+            View Details
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );
