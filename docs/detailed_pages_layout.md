@@ -540,3 +540,118 @@ Start the application process.
   - Button: `Send Application`
 
 
+# Application Wizard Page
+
+## 1. Detailed Description & Functional Logic
+
+This page is the critical conversion point of the application. It is designed as a **Multi-Step Wizard** to guide the candidate through the process of submitting their data. It combines static profile data with dynamic, job-specific requirements (such as the **Competency Test**).
+
+### A. Auto-Fill & Resume Logic
+
+**Purpose**  
+Reduce friction. Candidates should not have to enter the same information twice.
+
+**Functionality**
+- **State Hydration**  
+  - On page load, the application fetches the user’s Profile data from **Nest.js**.
+  - Fields such as **Name**, **Email**, and the default **Resume path** are pre-filled.
+- **Resume Override**  
+  - The user can choose to keep their **Master Resume** (from their profile) or upload a job-specific PDF.
+
+---
+
+### B. Competency Assessment (The “Test” Module)
+
+**Purpose**  
+Validate the skills claimed in the resume. This is the project’s unique selling point.
+
+**Functionality**
+- **Conditional Rendering**  
+  - This section appears only if the employer attached a quiz to the Job ID.
+- **Question Types Supported**
+  - Multiple Choice (Radio)
+  - Multiple Select (Checkbox)
+  - Short Answer (Text)
+- **Scoring**
+  - Answers are sent to the backend.
+  - The backend grades objective questions immediately.
+  - The resulting score is attached to the user’s application.
+
+---
+
+### C. Submission & Feedback
+
+**Purpose**  
+Finalize the application.
+
+**Functionality**
+- **AI Trigger**
+  - When **Submit** is clicked, the frontend sends the full payload to **Nest.js**.
+  - Nest.js queues a **Python microservice** to re-analyze the selected resume against the specific job description.
+  - A final `match_score` is generated.
+- **Redirect**
+  - On success, the user is redirected to the **My Applications** dashboard.
+
+---
+
+## 2. Hierarchical Structure
+
+```text
+[Page] Application Wizard (/jobs/:id/apply)
+├── [Header] Minimal Header (distraction-free mode)
+│   ├── [Link] ← Back to Job Details
+│   └── [Job Context]
+│       ├── [Text] Applying for Senior React Developer
+│       └── [Text] at TechCorp Inc.
+│
+├── [Progress Stepper]
+│   ├── [Step] 1. Contact Info (Active)
+│   ├── [Step] 2. Resume
+│   ├── [Step] 3. Skills Test (Conditional)
+│   └── [Step] 4. Review
+│
+├── [Step 1] Personal Information
+│   └── [Form Container]
+│       ├── [Input] Full Name (Read-only / Editable)
+│       ├── [Input] Email Address (Read-only)
+│       ├── [Input] Phone Number (Auto-filled)
+│       └── [Input] LinkedIn / Portfolio URL
+│
+├── [Step 2] CV Selection
+│   ├── [Option Card] Use Profile CV
+│   │   ├── [Radio] Selected
+│   │   ├── [Icon] PDF File
+│   │   └── [Text] my_master_resume.pdf (Uploaded on 12/05/2024)
+│   └── [Option Card] Upload New
+│       ├── [Radio] Unselected
+│       └── [Upload Zone] Drop custom resume for this job
+│
+├── [Step 3] Competency Assessment (Dynamic)
+│   ├── [Alert] This job requires a short skills test (5 mins)
+│   └── [Question Container] (Repeater)
+│       ├── [Question] What is the output of console.log(typeof null)?
+│       ├── [Code Snippet] (Optional, syntax highlighted)
+│       └── [Answers]
+│           ├── ( ) A) Object
+│           ├── ( ) B) Null
+│           └── ( ) C) Undefined
+│
+├── [Step 4] Final Details
+│   ├── [Cover Letter]
+│   │   ├── [Label] Why are you a good fit?
+│   │   └── [Textarea] Rich text or plain text
+│   └── [Summary Card]
+│       ├── [Text] You are applying as John Doe
+│       ├── [Text] Resume: Custom.pdf
+│       └── [Text] Test Status: Completed
+│
+└── [Action Footer]
+    ├── [Button] Cancel (Back to Job Page)
+    ├── [Button] Submit Application
+    ├── [Text] Submit Application
+    └── [Loading State] Analyzing compatibility...
+
+
+
+
+
