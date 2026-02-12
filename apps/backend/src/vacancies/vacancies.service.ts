@@ -117,4 +117,15 @@ export class VacanciesService {
 
     return vacancy;
   }
+
+  async getQuestions(vacancyId: string) {
+    return this.prisma.question.findMany({
+      where: { vacancyId },
+      select: {
+        id: true,
+        text: true,
+        options: true,
+      }
+    });
+  }
 }

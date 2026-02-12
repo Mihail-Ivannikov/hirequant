@@ -27,8 +27,13 @@ export class VacanciesController {
     return this.vacanciesService.autocomplete(query);
   }
 
-  // --- NEW ENDPOINT ADDED HERE ---
-  // Must be after 'autocomplete' to avoid routing conflicts
+
+   @Get(':id/questions')
+  async getQuestions(@Param('id') id: string) {
+    console.log(`Backend: Fetching questions for vacancy ID: ${id}`);
+    return this.vacanciesService.getQuestions(id);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.vacanciesService.findOne(id);
