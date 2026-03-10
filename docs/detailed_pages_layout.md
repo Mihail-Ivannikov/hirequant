@@ -651,6 +651,258 @@ Finalize the application.
     ├── [Text] Submit Application
     └── [Loading State] Analyzing compatibility...
 
+```
+
+# Candidate Profile (Personal Cabinet)
+
+## 1. Detailed Description & Functional Logic
+
+The **Candidate Profile** acts as the **Single Source of Truth (SSOT)** for the user.  
+Its primary purpose is **data persistence and automation**.
+
+Instead of repeatedly entering the same information for every job application, the user builds and maintains their profile once. This profile then powers AI-driven matching, recommendations, and auto-filled applications across the platform.
+
+
+### A. Master Resume & Parsing Engine
+
+**Purpose**  
+To serve as the default resume for all applications and as the primary input source for AI recommendations.
+
+**Functionality**
+
+- **Upload & Parse**
+  - When a user uploads a resume file, the frontend triggers the **Python Resume Parser**.
+  - Supported formats: PDF (initially).
+
+- **Auto-Population**
+  - Parsed content is automatically mapped into:
+    - Skills
+    - Work Experience
+    - Education
+  - These sections are immediately reflected in the profile UI.
+
+- **User Verification & Correction**
+  - Parsing accuracy is not assumed to be perfect.
+  - Users can:
+    - Edit extracted entries
+    - Add missing skills (e.g., adding `PostgreSQL` when the resume only states `SQL`)
+  - Manual edits override AI-detected data.
+
+
+### B. Skill Management (Vector Inputs)
+
+**Purpose**  
+To fine-tune the AI job-matching and recommendation algorithm.
+
+**Functionality**
+
+- **Tag-Based Skill System**
+  - Skills are stored as discrete tags.
+  - Each tag is converted into a vector embedding.
+
+- **Weighting Logic**
+  - Skills listed in the profile increase the user’s **Suitability Score** for roles requiring those skills.
+  - Manually added skills and frequently confirmed skills can be weighted higher.
+
+- **AI Awareness**
+  - Auto-detected skills are visually differentiated from user-added skills.
+  - User confirmation improves confidence scoring.
+
+
+### C. Profile Completeness Gamification
+
+**Purpose**  
+To encourage users to provide richer, more accurate data.
+
+**Functionality**
+
+- **Profile Strength Indicator**
+  - A progress bar displays overall profile completeness (e.g., `Profile 60% Complete`).
+
+- **Completion Incentive**
+  - Missing sections trigger contextual tips.
+  - Higher completeness results in:
+    - Better AI matching accuracy
+    - More relevant job recommendations
+    - Higher application success probability
+
+
+## 2. Hierarchical Structure
+
+### Page Structure
+
+```
+
+[Page: Candidate Profile] (/profile)
+
+```
+
+
+### Global Navigation
+
+```
+
+[Parent: Global Navigation]
+├── [Child: Logo]
+└── [Child: Links]
+├── Jobs
+├── Applications
+└── Profile (Active)
+
+```
+
+
+### Page Layout Grid
+
+```
+
+[Parent: Page Layout Grid]
+├── Left Sidebar (Identity & Contact)
+├── Main Content Area (Resume & Details)
+└── Sticky Footer / Action Bar
+
+```
+
+---
+
+## Left Sidebar — Identity & Contact
+
+```
+
+[Child: Left Sidebar]
+├── Avatar Module
+│   ├── Image Container (Photo or Initials)
+│   └── Upload Action (Camera Icon)
+│
+├── Identity Fields
+│   ├── Input: Full Name
+│   └── Input: Professional Headline
+│       (e.g., "Senior Backend Engineer")
+│
+├── Contact Information
+│   ├── Input: Email (Read-only / Verified)
+│   ├── Input: Phone Number
+│   └── Input: Location / City
+│
+├── Social Links
+│   ├── Input: LinkedIn URL
+│   └── Input: GitHub / Portfolio URL
+│
+└── Profile Strength Widget
+├── Progress Bar (e.g., 85%)
+└── Tip Text: "Add a bio to reach 100%"
+
+```
+
+---
+
+## Main Content Area — Resume & Details
+
+### Section: Master Resume
+
+```
+
+[Section: Master Resume]
+├── Header: "Resume / CV"
+└── Upload Card
+├── Dropzone Area
+│   └── Text: "Drag PDF here to auto-fill profile"
+├── Current File Preview
+│   ├── Icon: PDF
+│   ├── Filename: My_CV_2024.pdf
+│   └── Timestamp: "Uploaded 2 days ago"
+└── Actions
+├── Delete
+└── Replace
+
+```
+
+---
+
+### Section: Skills (AI Powered)
+
+```
+
+[Section: Skills]
+├── Header: "Key Competencies"
+├── Tag Container
+│   ├── Skill Tag (Auto): "React"
+│       Style: Blue (Detected from PDF)
+│   ├── Skill Tag (Auto): "Node.js"
+│   └── Skill Tag (Manual): "System Design"
+│       Style: Gray (Added by user)
+│
+└── Add Skill Input
+├── Typeahead Input: "Add a skill..."
+└── Button: "Add"
+
+```
+
+---
+
+### Section: Work Experience
+
+```
+
+[Section: Work Experience]
+├── Experience Card (Repeater)
+│   ├── Input: Job Title
+│   ├── Input: Company Name
+│   ├── Date Range Picker
+│   │   └── Start Date – End Date
+│   ├── Textarea: Description
+│   └── Delete Button
+│
+└── Button: "+ Add Position"
+
+```
+
+---
+
+### Section: Education
+
+```
+
+[Section: Education]
+├── Education Card (Repeater)
+│   ├── Input: Degree
+│   ├── Input: University
+│   └── Input: Graduation Year
+│
+└── Button: "+ Add Education"
+
+```
+
+---
+
+## Sticky Footer / Action Bar
+
+```
+
+[Parent: Sticky Footer]
+├── Status Message
+│   └── "All changes saved" (Auto-save indicator)
+└── Save Button
+└── Primary Action: Persist profile to database
+
+```
+
+---
+
+## Summary
+
+The **Candidate Profile** is the foundation of the platform:
+
+- Centralized data ownership
+- AI-powered parsing and enrichment
+- User-verified accuracy
+- Gamified completeness
+- Optimized for automation and scalability
+
+It ensures users spend less time re-entering data and more time applying to the right opportunities.
+
+
+
 
 
 

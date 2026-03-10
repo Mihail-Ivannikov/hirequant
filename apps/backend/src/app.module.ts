@@ -7,7 +7,7 @@ import { AppService } from './app.service';
 import { VacanciesModule } from './vacancies/vacancies.module';
 import { UsersModule } from './users/users.module';
 import { ApplicationsModule } from './applications/applications.module';
-
+import { TelegramModule } from './telegram/telegram.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), 
@@ -15,6 +15,7 @@ import { ApplicationsModule } from './applications/applications.module';
     VacanciesModule,
     UsersModule,
     ApplicationsModule,
+    TelegramModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
