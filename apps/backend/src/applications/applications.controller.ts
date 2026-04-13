@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
@@ -14,6 +14,25 @@ if (!existsSync(uploadDir)) {
 @Controller('vacancies')
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/applications')
+  async getMyApplications(@Req() req) {
+    return this.applicationsService.getMyApplications(req.user.auth0Id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me/applications/:id/messages')
+  async getMessages(@Param('id') applicationId: string, @Req() req) {
+    return this.applicationsService.getMessages(req.user.auth0Id, applicationId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/applications/:id/messages')
+  async sendMessage(@Param('id') applicationId: string, @Body('content') content: string, @Req() req) {
+    if (!content || content.trim() === '') throw new BadRequestException('Message content cannot be empty');
+    return this.applicationsService.sendMessage(req.user.auth0Id, applicationId, content);
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Post(':id/apply')
@@ -33,33 +52,14 @@ export class ApplicationsController {
     },
     limits: { fileSize: 5 * 1024 * 1024 }
   }))
-  async apply(
-    @Param('id') vacancyId: string, 
-    @Body() body: any, 
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req
-  ) {
+  async apply(@Param('id') vacancyId: string, @Body() body: any, @UploadedFile() file: Express.Multer.File, @Req() req) {
     let parsedAnswers = {};
     if (body.answers) {
-      try {
-        parsedAnswers = JSON.parse(body.answers);
-      } catch (e) {
-        console.error("JSON Parse Error:", e);
-      }
+      try { parsedAnswers = JSON.parse(body.answers); } catch (e) { console.error("JSON Parse Error:", e); }
     }
-    
-    const application = await this.applicationsService.apply(
-      req.user.auth0Id, 
-      vacancyId, 
-      { ...body, answers: parsedAnswers },
-      file
-    );
 
-    return {
-      success: true,
-      message: "Application received",
-      applicationId: application.id,
-      score: application.testScore
-    };
+    const application = await this.applicationsService.apply(req.user.auth0Id, vacancyId, { ...body, answers: parsedAnswers }, file);
+
+    return { success: true, message: "Application received", applicationId: application.id, score: application.testScore };
   }
 }

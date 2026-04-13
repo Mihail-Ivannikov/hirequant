@@ -904,6 +904,320 @@ It ensures users spend less time re-entering data and more time applying to the 
 
 
 
+# My Applications (Inbox) Page
+
+## 1. Detailed Description & Functional Logic
+
+This page is the candidate's personal tracking dashboard. Its primary function is to provide **clarity and communication**.
+
+It answers the key question:
+
+> "What is the status of my job applications?"
+
+It also acts as a gateway to direct communication with recruiters once mutual interest is established.
+
+---
+
+### A. Status Tracking & Information Hub
+
+**Purpose:**  
+Provide a transparent, real-time view of the application pipeline.
+
+**Functionality:**
+
+- **Visual Status Indicators**
+  - Color-coded badges for quick scanning
+  - Eliminates the need to read each entry in detail
+
+- **Sorting & Filtering**
+  - Sort by: `Last Updated`, `Status`
+  - Filter by: `Interview Stage`, etc.
+  - Essential for users managing many applications
+
+---
+
+### B. Communication Gateway ("Inbox")
+
+**Purpose:**  
+Enable communication only when relevant and appropriate.
+
+**Functionality:**
+
+- **Conditional Access**
+  - Chat is unlocked only when status is:
+    - `Accepted`
+    - `Contact`
+    - `Interview`
+  - Prevents spam and unsolicited messages
+
+- **Notification System**
+  - Visual indicators:
+    - Red dot
+    - "New Message" badge
+  - Appears when recruiter sends a message
+
+---
+
+### C. Chat Interface
+
+**Purpose:**  
+Provide seamless in-app messaging.
+
+**Functionality:**
+
+- **Modal / Drawer UI**
+  - Opens as overlay (no page navigation)
+  - Keeps user in context
+
+- **Real-time Communication**
+  - Powered by Socket.io
+  - Supports:
+    - Instant messaging
+    - "Typing..." indicators
+
+---
+
+## 2. Hierarchical Structure
+
+### Page
+- **My Applications** (`/my-applications`)
+
+---
+
+### Global Navigation
+- Jobs
+- Applications (Active)
+- Profile
+
+---
+
+### Page Header
+- **Title:** "My Applications"
+
+- **Filter Bar**
+  - **Sort Dropdown**
+    - Newest
+    - Status
+  - **Filter Dropdown**
+    - All
+    - Under Review
+    - Accepted
+
+---
+
+### Main Content: Application List Container
+
+#### Application Item Card (Repeatable Component)
+
+**Job Information**
+- Job Title: *Senior Frontend Developer*
+- Company: *Tech Solutions Inc.*
+
+**Application Details**
+- Timestamp: *Applied on: May 15, 2024*
+
+- **Status Badge (Dynamic)**
+  - Under Review → Yellow
+  - Interview Stage → Blue
+  - Accepted → Green
+  - Rejected → Red
+
+**Actions**
+- **Button (Dynamic)**
+  - "View Job" → Default / Inactive
+  - "Open Chat" → Active *(only if status = Accepted)*
+
+- **Notification Dot**
+  - Visible if unread messages exist
+
+---
+
+### Empty State (Conditional)
+
+- Icon: Empty Box
+- Text:  
+  > You haven't applied to any jobs yet.
+- Link:  
+  - "Find jobs now"
+
+---
+
+### Chat Modal / Drawer (Initially Hidden)
+
+**Header**
+- Recipient Info:  
+  - "Chat with John Smith from Tech Solutions Inc."
+- Close Button: `X`
+
+**Message Area**
+- Employer Message Bubble (repeated)
+- Candidate Message Bubble (repeated)
+
+**Input Area**
+- Text Input
+  - Placeholder: "Type your message..."
+- Send Button
+  - Icon: Paper Plane
+
+# ================================================================
+# EMPLOYER ZONE
+# ================================================================
 
 
+# Employer Dashboard (My Vacancies)
+
+## 1. Detailed Description & Functional Logic
+
+This page is the employer's **command center**. Its primary function is to provide an **operational overview** and act as the main **navigation hub** for recruitment activities.
+
+It answers key questions:
+
+> "What is the status of my open positions?"  
+> "Where should I focus my attention right now?"
+
+---
+
+### A. At-a-Glance Analytics
+
+**Purpose:**  
+Provide a quick, data-driven summary of the recruitment pipeline.
+
+**Functionality:**
+
+- **Key Performance Indicators (KPIs)**
+  - Displayed as **Stat Cards**
+  - Includes:
+    - Total Active Jobs
+    - Total Applicants
+    - New Applicants Requiring Review *(high priority)*
+  - The "New Applicants" metric creates urgency and guides user action
+
+---
+
+### B. Vacancy Management Control Panel
+
+**Purpose:**  
+Manage and monitor all employer-created job postings.
+
+**Functionality:**
+
+- **Centralized List**
+  - Table or list of all vacancies
+  - Each entry acts as a mini-dashboard
+  - Shows:
+    - Job status (Open / Closed)
+    - Applicant count (live)
+
+- **Action-Oriented Design**
+  - Each job includes key actions:
+    - **View Applicants**
+      - Navigates to AI-powered candidate list
+    - **Edit / Manage**
+      - Modify job details or close position
+
+---
+
+### C. Funnel Starting Point
+
+**Purpose:**  
+Provide a clear path to creating a new job posting.
+
+**Functionality:**
+
+- **Primary CTA: "Add Vacancy"**
+  - Most visually prominent element
+  - Starts recruitment workflow
+  - Navigates to Job Constructor page
+
+---
+
+## 2. Hierarchical Structure
+
+### Page
+- **Employer Dashboard** (`/employer/dashboard`)
+
+---
+
+### Global Navigation (Employer Context)
+- Logo
+- Links:
+  - Dashboard *(Active)*
+  - Company Profile
+- User Avatar / Logout
+
+---
+
+### Page Header
+- **Title:** "My Vacancies Dashboard"
+
+- **Primary Action Button**
+  - `+ Add New Vacancy`
+  - Style: Solid, prominent color
+
+---
+
+### Analytics Summary Row
+
+- **Statistic Card 1**
+  - Value: `5`
+  - Label: "Active Jobs"
+
+- **Statistic Card 2**
+  - Value: `124`
+  - Label: "Total Applicants"
+
+- **Statistic Card 3**
+  - Value: `12`
+  - Label: "New Applicants (Needs Review)"
+  - Style: Highlight / alert color
+
+---
+
+### Vacancy List Table
+
+#### Table Header
+- Job Title
+- Status
+- Applicants
+- Actions
+
+---
+
+#### Vacancy Row (Repeatable Component)
+
+**Job Info**
+- Title: *Senior Backend Engineer*
+- Date: *Created on: May 10, 2024*
+
+**Status**
+- Badge:
+  - Open → Green
+  - Closed → Gray
+
+**Applicants**
+- Text: `25 Total (8 New)`
+
+**Actions**
+- **Primary Button**
+  - "View Applicants"
+  - Route: `/employer/jobs/:id/applicants`
+
+- **Secondary Button**
+  - "Edit"
+  - Route: `/employer/jobs/edit/:id`
+
+- **More Menu (`...`)**
+  - Close Vacancy
+  - Delete
+
+---
+
+### Empty State (Conditional)
+
+- Icon: Large `+` or empty folder
+- Text:
+  > You haven't posted any jobs yet.
+- Button:
+  - "Create Your First Vacancy"
+  - Route: `/employer/jobs/create`
 

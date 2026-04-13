@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NO CHANGES TO THIS MODEL, EXCEPT ADDING THE RELATION
 model User {
   id        String    @id @default(cuid())
   email     String    @unique
@@ -15,44 +14,32 @@ model User {
   role      Role      @default(CANDIDATE)
   profile   CandidateProfile?
   vacancies Vacancy[] @relation("EmployerVacancies")
+  messages  Message[] @relation("UserMessages")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  // +++ ADD THIS ONE LINE TO CREATE THE LINK +++
   phoneAuth UserAuth?
 }
 
-// +++ NEW MODEL FOR MESSENGER AUTHENTICATION +++
 model UserAuth {
-  id        String   @id @default(cuid())
-  phone     String   @unique // The unique identifier for the new system
-  password  String   // Hashed password
-
-  // One-Time Password (OTP) for verification
-  otp          String?
-  otpExpiresAt DateTime?
-
-  // Two-Factor Authentication (2FA)
-  twoFactorSecret    String?
-  isTwoFactorEnabled Boolean  @default(false)
-
-  // PIN Code for session re-validation
-  pinCode          String?  // Hashed PIN
+  id               String    @id @default(cuid())
+  phone            String    @unique
+  password         String    
+  otp              String?
+  otpExpiresAt     DateTime?
+  twoFactorSecret  String?
+  isTwoFactorEnabled Boolean @default(false)
+  pinCode          String?  
   pinCodeExpiresAt DateTime?
-
-  // The one-to-one link to the core User model
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-
-// --- YOUR EXISTING MODELS (UNCHANGED) ---
 
 model CandidateProfile {
   id             String        @id @default(cuid())
   fullName       String
   headline       String?
-  phone          String? // This is just profile data now, not for login. It's fine to keep it.
+  phone          String? 
   location       String?
   avatarUrl      String?
   linkedInUrl    String?
@@ -62,25 +49,25 @@ model CandidateProfile {
   workExperience Json?
   education      Json?
   userId         String        @unique
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references:[id], onDelete: Cascade)
   applications   Application[]
 }
 
 model Vacancy {
-  id          String      @id @default(cuid())
-  title       String
-  company     String
-  location    String
-  salary      String
-  type        String
-  description String
-  skills      String[]
-  employerId  String
-  employer    User        @relation("EmployerVacancies", fields: [employerId], references: [id])
+  id           String        @id @default(cuid())
+  title        String
+  company      String
+  location     String
+  salary       String
+  type         String
+  description  String
+  skills       String[]
+  employerId   String
+  employer     User          @relation("EmployerVacancies", fields: [employerId], references: [id])
   applications Application[]
   questions    Question[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Question {
@@ -102,8 +89,19 @@ model Application {
   candidate   CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   vacancyId   String
   vacancy     Vacancy           @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  messages    Message[]         @relation("ApplicationMessages")
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  content       String
+  applicationId String
+  application   Application @relation("ApplicationMessages", fields: [applicationId], references: [id], onDelete: Cascade)
+  senderId      String
+  sender        User        @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
 }
 
 enum Role {
