@@ -67,7 +67,7 @@ export class AuthService {
     return authRecord;
   }
 
-  async registerComplete(phone: string, otp: string, pass: string): Promise<{ qrCodeUrl: string }> {
+  async registerComplete(phone: string, otp: string, pass: string, role?: string, companyName?: string): Promise<{ qrCodeUrl: string }> {
     const authRecord = await this.verifyOtp(phone, otp);
 
     if (authRecord.userId !== 'PENDING_REGISTRATION') {
@@ -79,11 +79,19 @@ export class AuthService {
 
     const placeholderEmail = `${phone}@phone-auth.local`;
     const placeholderAuth0Id = `phone|${phone}`;
+    
+    // Dynamic role mapping based on what frontend sends
+    const userRole = role === 'employer' ? 'EMPLOYER' : 'CANDIDATE';
 
     try {
       await this.prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
-          data: { email: placeholderEmail, auth0Id: placeholderAuth0Id, role: 'CANDIDATE' },
+          data: { 
+            email: placeholderEmail, 
+            auth0Id: placeholderAuth0Id, 
+            role: userRole,
+            companyName: userRole === 'EMPLOYER' ? (companyName || null) : null,
+          },
         });
 
         await tx.userAuth.update({
@@ -228,7 +236,7 @@ export class AuthService {
 
   // --- Auth0 Specific Methods ---
 
-  async syncUser(user: { auth0Id: string; email: string }) {
+  async syncUser(user: { auth0Id: string; email: string }, requestedRole?: string, companyName?: string) {
     const existingByAuth0 = await this.prisma.user.findUnique({
       where: { auth0Id: user.auth0Id },
     });
@@ -249,11 +257,15 @@ export class AuthService {
       });
     }
 
+    // Assign role dynamically during OAuth Sync
+    const assignedRole = requestedRole === 'employer' ? 'EMPLOYER' : 'CANDIDATE';
+
     return this.prisma.user.create({
       data: {
         email: user.email,
         auth0Id: user.auth0Id,
-        role: 'CANDIDATE',
+        role: assignedRole,
+        companyName: assignedRole === 'EMPLOYER' ? (companyName || null) : null,
       },
     });
   }

@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '@prisma/client';
 
 interface FilterParams {
   search?: string;
   type?: string[];
-  level?: string[]; 
+  level?: string[];
   minSalary?: number;
   maxSalary?: number;
 }
@@ -16,38 +16,28 @@ export class VacanciesService {
 
   async findAll(params: FilterParams) {
     const { search, type, level, minSalary, maxSalary } = params;
-
     const where: Prisma.VacancyWhereInput = {};
-    
-    const conditions: Prisma.VacancyWhereInput[] = [];
+    const conditions: Prisma.VacancyWhereInput[] =[];
 
     if (search) {
       conditions.push({
-        OR: [
+        OR:[
           { title: { contains: search, mode: 'insensitive' } },
           { company: { contains: search, mode: 'insensitive' } },
-          { skills: { has: search } }, 
+          { skills: { has: search } },
         ],
       });
     }
 
-    if (type && type.length > 0) {
-      conditions.push({
-        type: { in: type },
-      });
-    }
+    if (type && type.length > 0) conditions.push({ type: { in: type } });
 
     if (level && level.length > 0) {
       conditions.push({
-        OR: level.map((l) => ({
-          title: { contains: l, mode: 'insensitive' },
-        })),
+        OR: level.map((l) => ({ title: { contains: l, mode: 'insensitive' } })),
       });
     }
 
-    if (conditions.length > 0) {
-      where.AND = conditions;
-    }
+    if (conditions.length > 0) where.AND = conditions;
 
     let vacancies = await this.prisma.vacancy.findMany({
       where,
@@ -59,13 +49,10 @@ export class VacanciesService {
       vacancies = vacancies.filter((job) => {
         const matches = job.salary.match(/(\d+)/g);
         if (!matches || matches.length === 0) return false;
-
         const jobMin = parseInt(matches[0], 10);
         const jobMax = matches.length > 1 ? parseInt(matches[1], 10) : jobMin;
-
         if (minSalary !== undefined && !isNaN(minSalary) && jobMax < minSalary) return false;
         if (maxSalary !== undefined && !isNaN(maxSalary) && jobMin > maxSalary) return false;
-
         return true;
       });
     }
@@ -74,31 +61,23 @@ export class VacanciesService {
   }
 
   async autocomplete(query: string) {
-    if (!query || query.length < 2) return [];
-
+    if (!query || query.length < 2) return[];
     const results = await this.prisma.vacancy.findMany({
       where: {
-        OR: [
+        OR:[
           { title: { contains: query, mode: 'insensitive' } },
           { skills: { has: query } },
         ],
       },
-      select: {
-        title: true,
-        skills: true,
-      },
+      select: { title: true, skills: true },
       take: 10,
     });
 
     const suggestions = new Set<string>();
     results.forEach((job) => {
-      if (job.title.toLowerCase().includes(query.toLowerCase())) {
-        suggestions.add(job.title);
-      }
+      if (job.title.toLowerCase().includes(query.toLowerCase())) suggestions.add(job.title);
       job.skills.forEach((skill) => {
-        if (skill.toLowerCase().includes(query.toLowerCase())) {
-          suggestions.add(skill);
-        }
+        if (skill.toLowerCase().includes(query.toLowerCase())) suggestions.add(skill);
       });
     });
 
@@ -110,22 +89,67 @@ export class VacanciesService {
       where: { id },
       include: { employer: true },
     });
-
-    if (!vacancy) {
-      throw new NotFoundException(`Vacancy with ID ${id} not found`);
-    }
-
+    if (!vacancy) throw new NotFoundException(`Vacancy with ID ${id} not found`);
     return vacancy;
   }
 
   async getQuestions(vacancyId: string) {
     return this.prisma.question.findMany({
       where: { vacancyId },
-      select: {
-        id: true,
-        text: true,
-        options: true,
-      }
+      select: { id: true, text: true, options: true }
     });
+  }
+
+  // --- NEW ROLE & DASHBOARD LOGIC ---
+
+  async getUserRole(auth0Id: string) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user) throw new NotFoundException('User not found');
+    return { role: user.role };
+  }
+
+  async getEmployerDashboard(auth0Id: string) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    
+    if (!user || user.role !== 'EMPLOYER') {
+      throw new ForbiddenException('Access denied. Only employers can access this dashboard.');
+    }
+
+    const vacancies = await this.prisma.vacancy.findMany({
+      where: { employerId: user.id },
+      include: {
+        applications: { select: { id: true, status: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let totalApplicants = 0;
+    let newApplicants = 0;
+
+    const formattedVacancies = vacancies.map(v => {
+      const applicantsCount = v.applications.length;
+      const newCount = v.applications.filter(a => a.status === 'PENDING').length;
+      
+      totalApplicants += applicantsCount;
+      newApplicants += newCount;
+
+      return {
+        id: v.id,
+        title: v.title,
+        createdAt: v.createdAt,
+        status: 'Open', // Placeholder as per design until closing logic exists
+        applicantsCount,
+        newApplicantsCount: newCount
+      };
+    });
+
+    return {
+      stats: {
+        activeJobs: vacancies.length,
+        totalApplicants,
+        newApplicants
+      },
+      vacancies: formattedVacancies
+    };
   }
 }

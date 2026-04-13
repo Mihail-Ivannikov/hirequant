@@ -1,4 +1,5 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, Req } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { VacanciesService } from './vacancies.service';
 
 @Controller('vacancies')
@@ -27,8 +28,21 @@ export class VacanciesController {
     return this.vacanciesService.autocomplete(query);
   }
 
+  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('user/role')
+  async getUserRole(@Req() req) {
+    return this.vacanciesService.getUserRole(req.user.auth0Id);
+  }
 
-   @Get(':id/questions')
+  @UseGuards(AuthGuard('jwt'))
+  @Get('employer/dashboard')
+  async getEmployerDashboard(@Req() req) {
+    return this.vacanciesService.getEmployerDashboard(req.user.auth0Id);
+  }
+
+
+  @Get(':id/questions')
   async getQuestions(@Param('id') id: string) {
     console.log(`Backend: Fetching questions for vacancy ID: ${id}`);
     return this.vacanciesService.getQuestions(id);

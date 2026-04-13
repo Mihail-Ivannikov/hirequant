@@ -1,17 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, Briefcase } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useUserStore } from "@/hooks/use-user-store";
+import { api } from "@/lib/api";
 
 export function Header() {
-  const { isAuthenticated, logout, user } = useAuth0();
-  const { avatarUrl } = useUserStore();
-  const[imgError, setImgError] = useState(false);
+  const { isAuthenticated, logout, user, getAccessTokenSilently } = useAuth0();
+  const { avatarUrl, role, setRole } = useUserStore();
+  const [imgError, setImgError] = useState(false);
   const location = useLocation();
 
   const displayAvatarUrl = avatarUrl || user?.picture;
+
+  useEffect(() => {
+    if (isAuthenticated && role === null) {
+      const fetchRole = async () => {
+        try {
+          const token = await getAccessTokenSilently();
+          const { data } = await api.get('/vacancies/user/role', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setRole(data.role);
+        } catch (error) {
+          console.error("Failed to fetch user role");
+        }
+      };
+      fetchRole();
+    }
+  },[isAuthenticated, role, getAccessTokenSilently, setRole]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -25,13 +43,30 @@ export function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/jobs" className={`text-sm font-medium transition-colors ${location.pathname.includes('/jobs') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
-              Find Jobs
-            </Link>
-            {isAuthenticated && (
-              <Link to="/my-applications" className={`text-sm font-medium transition-colors ${location.pathname === '/my-applications' ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
-                My Applications
-              </Link>
+            {/* Candidate Navigation */}
+            {role !== 'EMPLOYER' && (
+              <>
+                <Link to="/jobs" className={`text-sm font-medium transition-colors ${location.pathname.includes('/jobs') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
+                  Find Jobs
+                </Link>
+                {isAuthenticated && (
+                  <Link to="/my-applications" className={`text-sm font-medium transition-colors ${location.pathname === '/my-applications' ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
+                    My Applications
+                  </Link>
+                )}
+              </>
+            )}
+
+            {/* Employer Navigation */}
+            {role === 'EMPLOYER' && (
+              <>
+                <Link to="/employer/dashboard" className={`text-sm font-medium transition-colors ${location.pathname === '/employer/dashboard' ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
+                  Dashboard
+                </Link>
+                <Link to="/profile" className={`text-sm font-medium transition-colors ${location.pathname === '/profile' ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
+                  Company Profile
+                </Link>
+              </>
             )}
           </nav>
         </div>

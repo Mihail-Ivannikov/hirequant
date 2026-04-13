@@ -1221,3 +1221,196 @@ Provide a clear path to creating a new job posting.
   - "Create Your First Vacancy"
   - Route: `/employer/jobs/create`
 
+
+# Job Constructor (Create / Edit) Page
+
+## 1. Detailed Description & Functional Logic
+
+This page is one of the most critical components in the entire system. It is not just a job posting form — it is the **configuration panel for the AI Matching Engine**.
+
+The data entered here directly influences how the backend vector similarity algorithm ranks and evaluates candidates.
+
+---
+
+## A. AI Competency Profiling (Required Skills Engine)
+
+### Purpose
+Define precise parameters used by the AI to evaluate candidate resumes.
+
+### Functionality
+
+- Employers input **Required Skills** as structured tags:
+  - Example: `Node.js`, `System Architecture`, `B2B Sales`
+
+- These tags are converted into a **Job Vector** by a Python microservice.
+
+- The job description + skills together define ranking accuracy.
+
+- If skipped, AI matching becomes less precise → UI must strongly emphasize importance.
+
+---
+
+## B. Candidate Fit Questionnaire (Pre-Screening Engine)
+
+### Purpose
+Create a structured questionnaire to evaluate whether a candidate is a good fit for the position before deeper evaluation.
+
+This is **not a quiz**, but a **fit assessment tool** used to filter and qualify candidates based on role alignment, experience, and expectations.
+
+---
+
+### Functionality
+
+- **Dynamic Form Engine**
+  - Add, reorder, delete questions
+
+- **Structured Evaluation Setup**
+  - Questions are used to assess candidate suitability
+  - Responses contribute to the overall matching and filtering process
+
+- **No grading system**
+  - Unlike a quiz, there are no correct/incorrect answers
+  - Instead, responses are used for qualitative evaluation by the system or recruiter
+
+---
+
+## C. Contextual Modes (Create vs Edit)
+
+### Purpose
+Reuse the same UI for both job creation and editing.
+
+### Functionality
+
+- Route-based behavior:
+  - `/employer/jobs/create`
+  - `/employer/jobs/edit/:id`
+
+- In **edit mode**:
+  - Existing job data is fetched from backend (Nest.js)
+  - Form fields are pre-filled
+  - Tags and questionnaire items are restored
+
+- UI changes:
+  - "Publish Vacancy" → "Save Changes"
+
+---
+
+## 2. Hierarchical Structure
+
+## Page
+- **Job Constructor**
+  - `/employer/jobs/create`
+  - `/employer/jobs/edit/:id`
+
+---
+
+## Page Header
+
+- Back Navigation
+  - `← Back to Dashboard`
+
+- Page Title
+  - Create New Vacancy / Edit Vacancy
+
+- Status Indicator
+  - "Draft saved at 14:05"
+
+---
+
+## Main Form Layout
+
+---
+
+### Section 1: Basic Information
+
+#### Header
+- "Job Details"
+
+#### Fields
+
+- Job Title  
+  - Placeholder: "e.g., Senior React Developer"
+
+- Location & Work Model  
+  - Dropdown:
+    - Remote
+    - Hybrid
+    - On-site
+
+- Salary Range  
+  - Min / Max inputs
+
+- Job Description  
+  - Rich text editor (responsibilities, benefits, etc.)
+
+---
+
+### Section 2: AI Matching Criteria (Highlighted)
+
+#### Header
+- "Required Skills (For AI Analysis)"
+
+#### Info Tooltip
+> Add key skills here. Our AI uses these exact terms to parse and rank candidate resumes.
+
+#### Fields
+
+- Tags Input
+  - Input: "Type a skill and press Enter..."
+  - Example tags:
+    - TypeScript [x]
+    - REST API [x]
+
+- Minimum Experience Level
+  - Dropdown (e.g., 3+ years)
+
+---
+
+### Section 3: Candidate Fit Questionnaire (Optional)
+
+#### Header
+- "Candidate Fit Questionnaire (Optional)"
+
+#### Toggle
+- Enable Questionnaire for this job
+
+---
+
+### Questions Container (Conditional)
+
+#### Question Block (Repeatable)
+
+- Question Header
+  - "Question 1"
+  - Delete Icon
+
+- Question Input
+  - Example: "How do you prefer working in a team environment?"
+
+---
+
+#### Answer Fields (No Correct Option)
+
+- Answer Input Row
+  - Free-text or structured response input
+
+- Button
+  - "+ Add Answer Field" (if structured format is used)
+
+- Button
+  - "+ Add Another Question"
+
+---
+
+## Sticky Action Footer
+
+- Cancel Button
+  - "Discard"
+
+- Secondary Button
+  - "Save as Draft"
+
+- Primary Button
+  - "Publish Vacancy"
+  - Triggers validation + POST/PUT request
+

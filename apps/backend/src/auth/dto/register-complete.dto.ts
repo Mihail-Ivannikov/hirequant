@@ -1,16 +1,23 @@
-import { IsNotEmpty, IsPhoneNumber, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 export class RegisterCompleteDto {
   @IsNotEmpty()
-  @IsPhoneNumber()
+  @IsString()
   phone: string;
-  
+
   @IsNotEmpty()
   @IsString()
   otp: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  companyName?: string;
 }

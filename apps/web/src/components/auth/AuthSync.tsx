@@ -13,8 +13,8 @@ export function AuthSync() {
   const hasSynced = useRef(false);
   const { toast } = useToast();
   
-  // Global Store
-  const { setAvatarUrl, requires2FA, is2FAVerified, setRequires2FA, set2FAVerified } = useUserStore();
+  // Global Store - NOW INCLUDES setRole
+  const { setAvatarUrl, requires2FA, is2FAVerified, setRequires2FA, set2FAVerified, setRole } = useUserStore();
   
   // Local State for the verification modal
   const [code, setCode] = useState("");
@@ -27,12 +27,34 @@ export function AuthSync() {
       try {
         const token = await getAccessTokenSilently();
 
-        // 1. Sync User to Database
-        await api.post('/auth/sync', {}, { headers: { Authorization: `Bearer ${token}` } });
+        // --- NEW LOGIC: Retrieve the onboarding payload securely stashed before OAuth redirect ---
+        const onboardingRole = localStorage.getItem('onboarding_role');
+        const onboardingCompany = localStorage.getItem('onboarding_company');
+
+        // 1. Sync User to Database (Now dynamically sending role and companyName)
+        const syncPayload = {
+            role: onboardingRole || undefined,
+            companyName: onboardingCompany || undefined
+        };
+        const syncResponse = await api.post('/auth/sync', syncPayload, { headers: { Authorization: `Bearer ${token}` } });
+
+        // Clean up local payload to ensure no accidental role reassignment on next login
+        localStorage.removeItem('onboarding_role');
+        localStorage.removeItem('onboarding_company');
+
+        // Update the frontend global store to lock down UI elements correctly
+        if (syncResponse.data && syncResponse.data.role) {
+            setRole(syncResponse.data.role);
+        }
 
         // 2. Fetch full profile and 2FA status immediately
         const response = await api.get('/users/me', { headers: { Authorization: `Bearer ${token}` } });
         const data = response.data;
+
+        // Fallback: Ensure role is set in case syncResponse didn't trigger it
+        if (data.role) {
+            setRole(data.role);
+        }
 
         // 3. Set Global Avatar so the Header updates instantly!
         const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -56,7 +78,7 @@ export function AuthSync() {
     };
 
     initializeUser();
-  }, [isAuthenticated, user, getAccessTokenSilently]);
+  },[isAuthenticated, user, getAccessTokenSilently, setAvatarUrl, setRequires2FA, set2FAVerified, setRole]);
 
   const handleVerify = async () => {
     if (code.length !== 6) return;

@@ -21,7 +21,13 @@ export class AuthController {
 
   @Post('register/complete')
   async registerComplete(@Body() body: RegisterCompleteDto) {
-    return this.authService.registerComplete(body.phone, body.otp, body.password);
+    return this.authService.registerComplete(
+      body.phone, 
+      body.otp, 
+      body.password, 
+      body.role, 
+      body.companyName
+    );
   }
 
   @Post('register/enable-2fa')
@@ -57,8 +63,12 @@ export class AuthController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('sync')
-  async syncUser(@Req() req) {
-    return this.authService.syncUser(req.user);
+  async syncUser(
+    @Req() req,
+    @Body('role') role?: string,
+    @Body('companyName') companyName?: string
+  ) {
+    return this.authService.syncUser(req.user, role, companyName);
   }
 
   @UseGuards(AuthGuard('jwt'))

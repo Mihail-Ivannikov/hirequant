@@ -8,28 +8,29 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  auth0Id   String    @unique
-  role      Role      @default(CANDIDATE)
-  profile   CandidateProfile?
-  vacancies Vacancy[] @relation("EmployerVacancies")
-  messages  Message[] @relation("UserMessages")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  email       String    @unique
+  auth0Id     String    @unique
+  role        Role      @default(CANDIDATE)
+  companyName String?   // Added to store Employer's company name
+  profile     CandidateProfile?
+  vacancies   Vacancy[] @relation("EmployerVacancies")
+  messages    Message[] @relation("UserMessages")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  phoneAuth UserAuth?
+  phoneAuth   UserAuth?
 }
 
 model UserAuth {
   id               String    @id @default(cuid())
   phone            String    @unique
-  password         String    
+  password         String
   otp              String?
   otpExpiresAt     DateTime?
   twoFactorSecret  String?
   isTwoFactorEnabled Boolean @default(false)
-  pinCode          String?  
+  pinCode          String?
   pinCodeExpiresAt DateTime?
   userId           String    @unique
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -39,7 +40,7 @@ model CandidateProfile {
   id             String        @id @default(cuid())
   fullName       String
   headline       String?
-  phone          String? 
+  phone          String?
   location       String?
   avatarUrl      String?
   linkedInUrl    String?
@@ -86,9 +87,9 @@ model Application {
   testScore   Int?
   resumeUrl   String?
   candidateId String
-  candidate   CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidate   CandidateProfile  @relation(fields: [candidateId], references:[id], onDelete: Cascade)
   vacancyId   String
-  vacancy     Vacancy           @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  vacancy     Vacancy           @relation(fields:[vacancyId], references: [id], onDelete: Cascade)
   messages    Message[]         @relation("ApplicationMessages")
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -98,7 +99,7 @@ model Message {
   id            String      @id @default(cuid())
   content       String
   applicationId String
-  application   Application @relation("ApplicationMessages", fields: [applicationId], references: [id], onDelete: Cascade)
+  application   Application @relation("ApplicationMessages", fields: [applicationId], references:[id], onDelete: Cascade)
   senderId      String
   sender        User        @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
   createdAt     DateTime    @default(now())
