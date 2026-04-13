@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -87,7 +87,7 @@ export class VacanciesService {
   async findOne(id: string) {
     const vacancy = await this.prisma.vacancy.findUnique({
       where: { id },
-      include: { employer: true },
+      include: { employer: true, questions: true },
     });
     if (!vacancy) throw new NotFoundException(`Vacancy with ID ${id} not found`);
     return vacancy;
@@ -96,11 +96,11 @@ export class VacanciesService {
   async getQuestions(vacancyId: string) {
     return this.prisma.question.findMany({
       where: { vacancyId },
-      select: { id: true, text: true, options: true }
+      select: { id: true, text: true, options: true, correct: true }
     });
   }
 
-  // --- NEW ROLE & DASHBOARD LOGIC ---
+  // --- ROLE & DASHBOARD LOGIC ---
 
   async getUserRole(auth0Id: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
@@ -110,7 +110,7 @@ export class VacanciesService {
 
   async getEmployerDashboard(auth0Id: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
-    
+
     if (!user || user.role !== 'EMPLOYER') {
       throw new ForbiddenException('Access denied. Only employers can access this dashboard.');
     }
@@ -129,7 +129,7 @@ export class VacanciesService {
     const formattedVacancies = vacancies.map(v => {
       const applicantsCount = v.applications.length;
       const newCount = v.applications.filter(a => a.status === 'PENDING').length;
-      
+
       totalApplicants += applicantsCount;
       newApplicants += newCount;
 
@@ -137,7 +137,7 @@ export class VacanciesService {
         id: v.id,
         title: v.title,
         createdAt: v.createdAt,
-        status: 'Open', // Placeholder as per design until closing logic exists
+        status: 'Open', 
         applicantsCount,
         newApplicantsCount: newCount
       };
@@ -151,5 +151,78 @@ export class VacanciesService {
       },
       vacancies: formattedVacancies
     };
+  }
+
+  // --- JOB CONSTRUCTOR LOGIC (CREATE / EDIT) ---
+
+  async createVacancy(auth0Id: string, data: any) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user || user.role !== 'EMPLOYER') {
+      throw new ForbiddenException('Only verified employers can create vacancies.');
+    }
+
+    if (!data.title || !data.description || !data.skills || data.skills.length === 0) {
+      throw new BadRequestException('Job title, description, and at least one skill are required.');
+    }
+
+    return this.prisma.vacancy.create({
+      data: {
+        title: data.title,
+        company: user.companyName || 'Undisclosed Company',
+        location: data.location,
+        salary: data.salary,
+        type: data.type,
+        description: data.description,
+        skills: data.skills,
+        employerId: user.id,
+        questions: {
+          create: data.questions?.map((q: any) => ({
+            text: q.text,
+            options: q.options,
+            correct: q.correct
+          })) ||[]
+        }
+      }
+    });
+  }
+
+  async updateVacancy(auth0Id: string, vacancyId: string, data: any) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user || user.role !== 'EMPLOYER') {
+      throw new ForbiddenException('Only verified employers can edit vacancies.');
+    }
+
+    const existingVacancy = await this.prisma.vacancy.findUnique({ where: { id: vacancyId } });
+    if (!existingVacancy) {
+      throw new NotFoundException('Vacancy not found.');
+    }
+    if (existingVacancy.employerId !== user.id) {
+      throw new ForbiddenException('You do not have permission to edit this vacancy.');
+    }
+
+    // Because applications store the integer 'testScore' directly, it is perfectly safe 
+    // to delete and recreate the questions without breaking past applicant records.
+    return this.prisma.$transaction(async (tx) => {
+      await tx.question.deleteMany({ where: { vacancyId } });
+
+      return tx.vacancy.update({
+        where: { id: vacancyId },
+        data: {
+          title: data.title,
+          location: data.location,
+          salary: data.salary,
+          type: data.type,
+          description: data.description,
+          skills: data.skills,
+          questions: {
+            create: data.questions?.map((q: any) => ({
+              text: q.text,
+              options: q.options,
+              correct: q.correct
+            })) ||[]
+          }
+        }
+      });
+    });
   }
 }

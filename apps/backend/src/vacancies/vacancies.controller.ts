@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Query, Param, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { VacanciesService } from './vacancies.service';
 
@@ -28,7 +28,6 @@ export class VacanciesController {
     return this.vacanciesService.autocomplete(query);
   }
 
-  
   @UseGuards(AuthGuard('jwt'))
   @Get('user/role')
   async getUserRole(@Req() req) {
@@ -41,6 +40,21 @@ export class VacanciesController {
     return this.vacanciesService.getEmployerDashboard(req.user.auth0Id);
   }
 
+  // --- JOB CONSTRUCTOR ENDPOINTS ---
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('employer/create')
+  async createVacancy(@Req() req, @Body() body: any) {
+    return this.vacanciesService.createVacancy(req.user.auth0Id, body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('employer/edit/:id')
+  async updateVacancy(@Req() req, @Param('id') id: string, @Body() body: any) {
+    return this.vacanciesService.updateVacancy(req.user.auth0Id, id, body);
+  }
+
+  // ----------------------------------
 
   @Get(':id/questions')
   async getQuestions(@Param('id') id: string) {

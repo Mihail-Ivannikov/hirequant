@@ -29,7 +29,7 @@ export default function EmployerDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [vacancies, setVacancies] = useState<EmployerVacancy[]>([]);
   
-  const [isLoading, setIsLoading] = useState(true);
+  const[isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function EmployerDashboardPage() {
       }
     };
     fetchDashboard();
-  },[isAuthenticated, getAccessTokenSilently]);
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   if (error) {
     return (
@@ -79,9 +79,13 @@ export default function EmployerDashboardPage() {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Vacancies Dashboard</h1>
             <p className="text-slate-500 mt-1">Manage your job postings and review incoming candidates.</p>
           </div>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap shadow-sm">
-            <Plus className="h-4 w-4 mr-2" /> Add New Vacancy
-          </Button>
+          
+          {/* LINK TO CREATE PAGE HERE */}
+          <Link to="/employer/jobs/create">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap shadow-sm">
+              <Plus className="h-4 w-4 mr-2" /> Add New Vacancy
+            </Button>
+          </Link>
         </div>
 
         {isLoading || !stats ? (
@@ -131,7 +135,11 @@ export default function EmployerDashboardPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-700">You haven't posted any jobs yet.</h3>
                 <p className="text-slate-500 mt-2 mb-6">Create your first vacancy to start receiving AI-matched applicants.</p>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Create Your First Vacancy</Button>
+                
+                {/* LINK TO CREATE PAGE HERE */}
+                <Link to="/employer/jobs/create">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Create Your First Vacancy</Button>
+                </Link>
               </div>
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -166,9 +174,14 @@ export default function EmployerDashboardPage() {
                             )}
                           </td>
                           <td className="px-6 py-4 text-right space-x-2">
-                            <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 shadow-none">
-                              Edit
-                            </Button>
+                            
+                            {/* LINK TO EDIT PAGE HERE */}
+                            <Link to={`/employer/jobs/edit/${vacancy.id}`}>
+                              <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 shadow-none">
+                                Edit
+                              </Button>
+                            </Link>
+
                             <Button size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-none">
                               View Applicants
                             </Button>
