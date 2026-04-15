@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
@@ -63,10 +63,22 @@ export class ApplicationsController {
     return { success: true, message: "Application received", applicationId: application.id, score: application.testScore };
   }
 
-  
   @UseGuards(AuthGuard('jwt'))
   @Get('employer/:id/applicants')
   async getVacancyApplicants(@Req() req, @Param('id') vacancyId: string) {
     return this.applicationsService.getVacancyApplicants(req.user.auth0Id, vacancyId);
+  }
+
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('employer/applications/:id')
+  async getApplicationDetails(@Req() req, @Param('id') applicationId: string) {
+    return this.applicationsService.getApplicationDetails(req.user.auth0Id, applicationId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('employer/applications/:id/status')
+  async updateApplicationStatus(@Req() req, @Param('id') applicationId: string, @Body('status') status: string) {
+    return this.applicationsService.updateApplicationStatus(req.user.auth0Id, applicationId, status);
   }
 }

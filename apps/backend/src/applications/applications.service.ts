@@ -94,8 +94,6 @@ export class ApplicationsService {
     });
   }
 
-  // --- NEW: AI Ranking Engine Logic ---
-  
   async getVacancyApplicants(auth0Id: string, vacancyId: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
     if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException("Access denied");
@@ -119,23 +117,21 @@ export class ApplicationsService {
         let missingSkills: string[] = [...vacancy.skills];
 
         if (app.candidate.skills && app.candidate.skills.length > 0) {
-            matchedSkills = vacancy.skills.filter(s => 
+            matchedSkills = vacancy.skills.filter(s =>
                 app.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
             );
-            missingSkills = vacancy.skills.filter(s => 
+            missingSkills = vacancy.skills.filter(s =>
                 !app.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
             );
         }
 
-        // If the AI Score hasn't been calculated yet, compute and persist it.
-        // Blends semantic skill match (70% weight) with the fit questionnaire score (30% weight)
         if (aiScore === null) {
-            const skillScore = vacancy.skills.length > 0 
-                ? Math.round((matchedSkills.length / vacancy.skills.length) * 100) 
-                : 85; 
-            
-            aiScore = app.testScore !== null 
-                ? Math.round((skillScore * 0.7) + (app.testScore * 0.3)) 
+            const skillScore = vacancy.skills.length > 0
+                ? Math.round((matchedSkills.length / vacancy.skills.length) * 100)
+                : 85;
+
+            aiScore = app.testScore !== null
+                ? Math.round((skillScore * 0.7) + (app.testScore * 0.3))
                 : skillScore;
 
             await this.prisma.application.update({
@@ -175,5 +171,87 @@ export class ApplicationsService {
         },
         applicants
     };
+  }
+
+
+  async getApplicationDetails(auth0Id: string, applicationId: string) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException("Access denied");
+
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        candidate: true,
+        vacancy: true,
+      }
+    });
+
+    if (!application || application.vacancy.employerId !== user.id) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    let matchedSkills: string[] = [];
+    let missingSkills: string[] =[...application.vacancy.skills];
+
+    if (application.candidate.skills && application.candidate.skills.length > 0) {
+      matchedSkills = application.vacancy.skills.filter(s =>
+        application.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
+      );
+      missingSkills = application.vacancy.skills.filter(s =>
+        !application.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
+      );
+    }
+
+    const actualResumeUrl = application.resumeUrl === 'profile-linked' 
+      ? application.candidate.resumeUrl 
+      : application.resumeUrl;
+
+    return {
+      id: application.id,
+      status: application.status,
+      createdAt: application.createdAt,
+      testScore: application.testScore,
+      aiScore: application.aiScore,
+      resumeUrl: actualResumeUrl,
+      candidate: {
+        id: application.candidate.id,
+        fullName: application.candidate.fullName,
+        headline: application.candidate.headline,
+        avatarUrl: application.candidate.avatarUrl,
+      },
+      vacancy: {
+        id: application.vacancy.id,
+        title: application.vacancy.title,
+        company: application.vacancy.company,
+      },
+      insights: {
+        matchedSkills,
+        missingSkills
+      }
+    };
+  }
+
+  async updateApplicationStatus(auth0Id: string, applicationId: string, status: string) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException("Access denied");
+
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { vacancy: true }
+    });
+
+    if (!application || application.vacancy.employerId !== user.id) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED'];
+    if (!validStatuses.includes(status)) throw new BadRequestException("Invalid status");
+
+    const updatedApp = await this.prisma.application.update({
+      where: { id: applicationId },
+      data: { status: status as any }
+    });
+
+    return { success: true, status: updatedApp.status };
   }
 }

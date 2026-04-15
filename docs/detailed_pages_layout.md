@@ -1591,3 +1591,214 @@ Transition from **Screening → Reviewing**
 - Employers see best matches first
 - Full applicant list remains accessible
 - Seamless transition to detailed candidate review
+
+# Candidate Review (Detailed View)
+
+**Route:** `/employer/applications/:applicationId`
+
+---
+
+## 1. Detailed Description & Functional Logic
+
+This page is the **ultimate decision-making workspace** for the employer.
+
+It unifies:
+- The original resume (PDF)
+- AI-powered analysis
+- Communication tools
+
+All within a single, high-efficiency interface.
+
+---
+
+### A. Split-Screen Layout (Efficiency)
+
+**Purpose:**  
+Enable simultaneous resume review and decision-making.
+
+**Functionality:**
+
+- Screen divided into two panels:
+  - **Left Panel:** Candidate's original CV (PDF)
+  - **Right Panel:** AI insights, application data, and actions
+
+- Combines:
+  - Human evaluation (document reading)
+  - Machine intelligence (AI scoring)
+
+---
+
+### B. AI Transparency (The "Why" Box)
+
+**Purpose:**  
+Build trust in AI decisions by explaining the score.
+
+**Functionality:**
+
+- Displays extracted entities from NLP model:
+
+#### Matched Skills
+- Skills found in CV matching job requirements
+
+#### Missing Skills
+- Required skills not detected in CV
+
+#### Assessment Score
+- Quiz/test results (if applicable)
+- Contributes to overall suitability score
+
+---
+
+### C. Workflow Actions & Communication
+
+**Purpose:**  
+Advance candidates through pipeline and initiate contact.
+
+**Functionality:**
+
+- **Reject**
+  - Updates status to `Rejected`
+  - Removes candidate from active pipeline
+  - Optionally sends automated rejection email
+
+- **Accept & Contact**
+  - Updates status to `Interview / Contacted`
+  - Activates real-time chat (WebSocket)
+  - Reveals messaging interface instantly
+
+---
+
+## 2. Hierarchical Structure
+
+---
+
+### Page
+- Candidate Review (Detailed View)
+
+---
+
+### Contextual Header
+
+- **Navigation**
+  - ← Back to Applicant List
+
+- **Header Info**
+  - **Candidate Name:** Alex Johnson
+  - **Subtitle:** Applying for: Senior React Developer
+  - **Status Badge:** Under Review (Yellow)
+
+---
+
+### Split-Screen Layout Container
+
+---
+
+## Left Panel (Source Document)
+
+### Document Toolbar
+- File name: `alex_johnson_cv.pdf`
+- Actions:
+  - Zoom In
+  - Zoom Out
+  - Download PDF
+
+### PDF Viewer
+- Embedded viewer (iframe/canvas)
+- Renders actual resume
+
+---
+
+## Right Panel (Intelligence, Workflow, Chat)
+
+---
+
+### Tab Controller
+
+- **AI Analysis** (Default)
+- **Messages** (Unlocked after acceptance)
+
+---
+
+### AI Analysis Container
+
+#### Overall Score Widget
+- Radial Chart: `92% Match`
+- Summary:
+  - "Highly suitable based on vector similarity."
+
+---
+
+### Extracted Data Section
+
+#### AI Skill Breakdown
+
+**Matched Skills (✔):**
+- React
+- TypeScript
+- Redux
+
+**Missing Skills (✘):**
+- Docker
+- CI/CD
+
+---
+
+### Competency Test Results (Conditional)
+
+- Quiz Score: `3/3 (Passed)`
+- Expandable section:
+  - View detailed answers
+
+---
+
+### Action Bar (Sticky Bottom)
+
+- **Reject Candidate**
+  - Changes status
+  - Closes application
+
+- **Accept & Contact**
+  - Updates status
+  - Switches to Messages tab
+
+---
+
+## Chat Interface (Messages Tab)
+
+### Chat Header
+- Conversation with Alex
+
+---
+
+### Message History
+
+- System:
+  - "You accepted this candidate on May 15."
+
+- Employer:
+  - "Hi Alex, we loved your CV. When can we call?"
+
+- Candidate:
+  - "Thank you! I am free tomorrow at 2 PM."
+
+---
+
+### Message Input
+
+- Text input:
+  - "Type a message..."
+
+- Send button:
+  - Triggers WebSocket (Socket.io) event
+
+---
+
+## 3. Key Value
+
+- Eliminates context switching between tools
+- Combines:
+  - Document review
+  - AI insights
+  - Communication
+- Enables faster, more informed hiring decisions
+- Provides transparency into AI reasoning
