@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Query, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { VacanciesService } from './vacancies.service';
 
@@ -40,7 +40,6 @@ export class VacanciesController {
     return this.vacanciesService.getEmployerDashboard(req.user.auth0Id);
   }
 
-  // --- JOB CONSTRUCTOR ENDPOINTS ---
 
   @UseGuards(AuthGuard('jwt'))
   @Post('employer/create')
@@ -54,11 +53,15 @@ export class VacanciesController {
     return this.vacanciesService.updateVacancy(req.user.auth0Id, id, body);
   }
 
-  // ----------------------------------
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('employer/:id')
+  async deleteVacancy(@Req() req, @Param('id') id: string) {
+    return this.vacanciesService.deleteVacancy(req.user.auth0Id, id);
+  }
+
 
   @Get(':id/questions')
   async getQuestions(@Param('id') id: string) {
-    console.log(`Backend: Fetching questions for vacancy ID: ${id}`);
     return this.vacanciesService.getQuestions(id);
   }
 

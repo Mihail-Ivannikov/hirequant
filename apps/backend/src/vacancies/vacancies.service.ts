@@ -100,8 +100,6 @@ export class VacanciesService {
     });
   }
 
-  // --- ROLE & DASHBOARD LOGIC ---
-
   async getUserRole(auth0Id: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
@@ -110,16 +108,13 @@ export class VacanciesService {
 
   async getEmployerDashboard(auth0Id: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
-
     if (!user || user.role !== 'EMPLOYER') {
       throw new ForbiddenException('Access denied. Only employers can access this dashboard.');
     }
 
     const vacancies = await this.prisma.vacancy.findMany({
       where: { employerId: user.id },
-      include: {
-        applications: { select: { id: true, status: true } }
-      },
+      include: { applications: { select: { id: true, status: true } } },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -129,7 +124,6 @@ export class VacanciesService {
     const formattedVacancies = vacancies.map(v => {
       const applicantsCount = v.applications.length;
       const newCount = v.applications.filter(a => a.status === 'PENDING').length;
-
       totalApplicants += applicantsCount;
       newApplicants += newCount;
 
@@ -144,26 +138,15 @@ export class VacanciesService {
     });
 
     return {
-      stats: {
-        activeJobs: vacancies.length,
-        totalApplicants,
-        newApplicants
-      },
+      stats: { activeJobs: vacancies.length, totalApplicants, newApplicants },
       vacancies: formattedVacancies
     };
   }
 
-  // --- JOB CONSTRUCTOR LOGIC (CREATE / EDIT) ---
 
   async createVacancy(auth0Id: string, data: any) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
-    if (!user || user.role !== 'EMPLOYER') {
-      throw new ForbiddenException('Only verified employers can create vacancies.');
-    }
-
-    if (!data.title || !data.description || !data.skills || data.skills.length === 0) {
-      throw new BadRequestException('Job title, description, and at least one skill are required.');
-    }
+    if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException('Employer role required.');
 
     return this.prisma.vacancy.create({
       data: {
@@ -188,20 +171,11 @@ export class VacanciesService {
 
   async updateVacancy(auth0Id: string, vacancyId: string, data: any) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
-    if (!user || user.role !== 'EMPLOYER') {
-      throw new ForbiddenException('Only verified employers can edit vacancies.');
-    }
+    if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException('Employer role required.');
 
-    const existingVacancy = await this.prisma.vacancy.findUnique({ where: { id: vacancyId } });
-    if (!existingVacancy) {
-      throw new NotFoundException('Vacancy not found.');
-    }
-    if (existingVacancy.employerId !== user.id) {
-      throw new ForbiddenException('You do not have permission to edit this vacancy.');
-    }
+    const existing = await this.prisma.vacancy.findUnique({ where: { id: vacancyId } });
+    if (!existing || existing.employerId !== user.id) throw new ForbiddenException('Permission denied.');
 
-    // Because applications store the integer 'testScore' directly, it is perfectly safe 
-    // to delete and recreate the questions without breaking past applicant records.
     return this.prisma.$transaction(async (tx) => {
       await tx.question.deleteMany({ where: { vacancyId } });
 
@@ -224,5 +198,17 @@ export class VacanciesService {
         }
       });
     });
+  }
+
+  async deleteVacancy(auth0Id: string, vacancyId: string) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException('Employer role required.');
+
+    const existing = await this.prisma.vacancy.findUnique({ where: { id: vacancyId } });
+    if (!existing) throw new NotFoundException('Vacancy not found.');
+    if (existing.employerId !== user.id) throw new ForbiddenException('Permission denied.');
+
+    await this.prisma.vacancy.delete({ where: { id: vacancyId } });
+    return { success: true, message: 'Vacancy deleted successfully.' };
   }
 }
