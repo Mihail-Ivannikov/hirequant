@@ -11,6 +11,7 @@ import CandidateProfilePage from "@/pages/CandidateProfilePage";
 import MyApplicationsPage from "@/pages/MyApplicationsPage";
 import EmployerDashboardPage from "@/pages/EmployerDashboardPage";
 import JobConstructorPage from "@/pages/JobConstructorPage";
+import ApplicantRankingPage from "@/pages/ApplicantRankingPage";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/employer/dashboard" element={<EmployerDashboardPage />} />
         <Route path="/employer/jobs/create" element={<JobConstructorPage />} />
         <Route path="/employer/jobs/edit/:id" element={<JobConstructorPage />} />
+        <Route path="/employer/jobs/:id/applicants" element={<ApplicantRankingPage />} />
         <Route path="/profile" element={<CandidateProfilePage />} />
       </Routes>
       <Toaster />

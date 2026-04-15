@@ -1414,3 +1414,180 @@ Reuse the same UI for both job creation and editing.
   - "Publish Vacancy"
   - Triggers validation + POST/PUT request
 
+# Applicant List (AI Ranking Page)
+
+**Route:** `/employer/jobs/:id/applicants`
+
+---
+
+## 1. Detailed Description & Functional Logic
+
+This page represents the **core value proposition** of the project. Instead of manually reviewing hundreds of resumes, the employer is presented with a **mathematically ranked list of candidates** powered by AI.
+
+---
+
+### A. AI Ranking Engine (Top Matches)
+
+**Purpose:**  
+Instantly highlight candidates who best fit the job description based on vector analysis.
+
+**Functionality:**
+
+- **Algorithmic Sorting**
+  - Candidates are ordered by **Suitability Score (Highest → Lowest)**
+
+- **Visual Scoring**
+  - Color-coded indicators:
+    - Green: 90%+
+    - Yellow: 70%+
+    - Red: Below 70%
+
+- **Contextual AI Insights**
+  - Example:
+    - "Matched 5/5 Required Skills"
+    - "Failed Competency Test"
+
+---
+
+### B. Tabbed Data Views (Top 10 vs. All)
+
+**Purpose:**  
+Provide AI efficiency while maintaining user control.
+
+**Functionality:**
+
+- **Tab 1: Top Candidates (Default)**
+  - Shows curated ranked list (Top 10 or >75% match)
+
+- **Tab 2: All Applicants**
+  - Chronological list
+  - Used for:
+    - Verifying AI results
+    - Bulk rejecting low-quality candidates
+
+---
+
+### C. Pipeline Bridge
+
+**Purpose:**  
+Transition from **Screening → Reviewing**
+
+**Functionality:**
+
+- Clicking a candidate row navigates to:
+/employer/applications/:applicationId
+
+- Enables:
+- CV review
+- Chat initiation
+
+---
+
+## 2. Hierarchical Structure
+
+### Page
+- Applicant List (AI Ranking Page)
+
+---
+
+### Global Navigation
+- Logo
+- Links
+
+---
+
+### Job Context Header
+
+- **Navigation Action**
+- ← Back to My Vacancies
+
+- **Job Title**
+- Senior React Developer
+
+- **Job Metadata**
+- Posted on: May 1, 2024
+- Status: Active
+- Total Applicants: 45
+
+---
+
+### View Controller (Tabs)
+
+- 🏆 Top Matches (AI Ranked) *(Active)*
+- 📋 All Applicants (Chronological)
+
+---
+
+## 3. AI Ranked List Container (Tab 1)
+
+### Section Info Alert
+
+- Icon: AI Sparkles  
+- Text:  
+> These candidates are ranked by semantic similarity to your required skills and their test performance.
+
+---
+
+### Ranked Applicant Card (Repeater)
+
+#### Rank Indicator
+- #1 (Top candidate may include medal icon)
+
+#### Candidate Info
+- Name: Alex Johnson
+- Headline: Frontend Engineer | 5 YOE
+
+#### AI Intelligence Block
+
+- **Suitability Score**
+- Radial Progress Bar: 94% (Green)
+- Label: Overall Match
+
+- **Skill Match Summary**
+- Matched: React, Node.js
+- Missing: AWS
+
+- **Quiz Score (Conditional)**
+- Test: 100% (3/3)
+
+#### Action Area
+
+- Button: Review Candidate  
+- Navigates to `/employer/applications/:applicationId`
+
+---
+
+## 4. All Applicants Table (Tab 2)
+
+### Table Header
+
+| Column            | Notes      |
+|------------------|------------|
+| Date Applied     | Sortable   |
+| Candidate Name   |            |
+| AI Score         | Sortable   |
+| Status           |            |
+
+---
+
+### Table Body (Repeater)
+
+| Date Applied | Candidate Name | AI Score | Status | Action |
+|--------------|----------------|----------|--------|--------|
+| May 14, 2024 | Sam Smith      | 42%      | New    | Review |
+
+---
+
+## 5. Floating Actions / Bulk Tools (Optional)
+
+- Export Top 10 as CSV
+- Bulk Reject Candidates Below 50%
+
+---
+
+## 6. Summary
+
+- AI ranks candidates automatically
+- Employers see best matches first
+- Full applicant list remains accessible
+- Seamless transition to detailed candidate review

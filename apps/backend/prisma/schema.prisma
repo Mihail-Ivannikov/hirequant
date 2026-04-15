@@ -85,6 +85,7 @@ model Application {
   status      ApplicationStatus @default(PENDING)
   coverLetter String?           @db.Text
   testScore   Int?
+  aiScore     Int?              // Added for AI Semantic Ranking
   resumeUrl   String?
   candidateId String
   candidate   CandidateProfile  @relation(fields: [candidateId], references:[id], onDelete: Cascade)
@@ -101,7 +102,7 @@ model Message {
   applicationId String
   application   Application @relation("ApplicationMessages", fields: [applicationId], references:[id], onDelete: Cascade)
   senderId      String
-  sender        User        @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  sender        User        @relation("UserMessages", fields: [senderId], references:[id], onDelete: Cascade)
   createdAt     DateTime    @default(now())
 }
 

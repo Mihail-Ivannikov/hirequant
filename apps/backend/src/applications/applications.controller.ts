@@ -62,4 +62,11 @@ export class ApplicationsController {
 
     return { success: true, message: "Application received", applicationId: application.id, score: application.testScore };
   }
+
+  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('employer/:id/applicants')
+  async getVacancyApplicants(@Req() req, @Param('id') vacancyId: string) {
+    return this.applicationsService.getVacancyApplicants(req.user.auth0Id, vacancyId);
+  }
 }

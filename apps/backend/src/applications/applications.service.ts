@@ -66,7 +66,7 @@ export class ApplicationsService {
   async getMessages(auth0Id: string, applicationId: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id }, include: { profile: true } });
     const application = await this.prisma.application.findUnique({ where: { id: applicationId }, include: { vacancy: true } });
-    
+
     if (!application || !user) throw new BadRequestException("Invalid request");
     if (application.candidateId !== user.profile?.id && application.vacancy.employerId !== user.id) {
         throw new ForbiddenException("Access denied");
@@ -82,7 +82,7 @@ export class ApplicationsService {
   async sendMessage(auth0Id: string, applicationId: string, content: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id }, include: { profile: true } });
     const application = await this.prisma.application.findUnique({ where: { id: applicationId }, include: { vacancy: true } });
-    
+
     if (!application || !user) throw new BadRequestException("Invalid request");
     if (application.candidateId !== user.profile?.id && application.vacancy.employerId !== user.id) {
         throw new ForbiddenException("Access denied");
@@ -92,5 +92,88 @@ export class ApplicationsService {
       data: { content, applicationId, senderId: user.id },
       include: { sender: { select: { id: true, role: true, profile: { select: { fullName: true, avatarUrl: true } } } } }
     });
+  }
+
+  // --- NEW: AI Ranking Engine Logic ---
+  
+  async getVacancyApplicants(auth0Id: string, vacancyId: string) {
+    const user = await this.prisma.user.findUnique({ where: { auth0Id } });
+    if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException("Access denied");
+
+    const vacancy = await this.prisma.vacancy.findUnique({
+      where: { id: vacancyId },
+      include: {
+        applications: {
+          include: { candidate: true }
+        }
+      }
+    });
+
+    if (!vacancy || vacancy.employerId !== user.id) {
+        throw new ForbiddenException("Access denied");
+    }
+
+    const applicants = await Promise.all(vacancy.applications.map(async (app) => {
+        let aiScore = app.aiScore;
+        let matchedSkills: string[] =[];
+        let missingSkills: string[] = [...vacancy.skills];
+
+        if (app.candidate.skills && app.candidate.skills.length > 0) {
+            matchedSkills = vacancy.skills.filter(s => 
+                app.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
+            );
+            missingSkills = vacancy.skills.filter(s => 
+                !app.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
+            );
+        }
+
+        // If the AI Score hasn't been calculated yet, compute and persist it.
+        // Blends semantic skill match (70% weight) with the fit questionnaire score (30% weight)
+        if (aiScore === null) {
+            const skillScore = vacancy.skills.length > 0 
+                ? Math.round((matchedSkills.length / vacancy.skills.length) * 100) 
+                : 85; 
+            
+            aiScore = app.testScore !== null 
+                ? Math.round((skillScore * 0.7) + (app.testScore * 0.3)) 
+                : skillScore;
+
+            await this.prisma.application.update({
+                where: { id: app.id },
+                data: { aiScore }
+            });
+        }
+
+        return {
+            id: app.id,
+            status: app.status,
+            createdAt: app.createdAt,
+            testScore: app.testScore,
+            aiScore: aiScore,
+            candidate: {
+                id: app.candidate.id,
+                fullName: app.candidate.fullName,
+                headline: app.candidate.headline,
+                avatarUrl: app.candidate.avatarUrl,
+            },
+            insights: {
+                matchedSkills,
+                missingSkills
+            }
+        };
+    }));
+
+    applicants.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
+
+    return {
+        vacancy: {
+            id: vacancy.id,
+            title: vacancy.title,
+            createdAt: vacancy.createdAt,
+            status: 'Active',
+            totalApplicants: vacancy.applications.length
+        },
+        applicants
+    };
   }
 }

@@ -27,12 +27,12 @@ interface EmployerVacancy {
 export default function EmployerDashboardPage() {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { toast } = useToast();
-  
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [vacancies, setVacancies] = useState<EmployerVacancy[]>([]);
-  
+
   const[isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const[error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,21 +57,21 @@ export default function EmployerDashboardPage() {
       }
     };
     fetchDashboard();
-  }, [isAuthenticated, getAccessTokenSilently]);
+  },[isAuthenticated, getAccessTokenSilently]);
 
   const handleDeleteVacancy = async (vacancyId: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this vacancy? This action cannot be undone.")) return;
-    
+
     setDeletingId(vacancyId);
     try {
       const token = await getAccessTokenSilently();
       await api.delete(`/vacancies/employer/${vacancyId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const deletedVacancy = vacancies.find(v => v.id === vacancyId);
       setVacancies(vacancies.filter(v => v.id !== vacancyId));
-      
+
       if (stats && deletedVacancy) {
         setStats({
           activeJobs: stats.activeJobs - 1,
@@ -79,7 +79,7 @@ export default function EmployerDashboardPage() {
           newApplicants: stats.newApplicants - deletedVacancy.newApplicantsCount,
         });
       }
-      
+
       toast({ title: "Deleted", description: "Vacancy has been successfully removed." });
     } catch (err) {
       toast({ variant: "destructive", title: "Error", description: "Failed to delete the vacancy." });
@@ -104,14 +104,14 @@ export default function EmployerDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Vacancies Dashboard</h1>
             <p className="text-slate-500 mt-1">Manage your job postings and review incoming candidates.</p>
           </div>
-          
+
           <Link to="/employer/jobs/create">
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap shadow-sm">
               <Plus className="h-4 w-4 mr-2" /> Add New Vacancy
@@ -133,7 +133,7 @@ export default function EmployerDashboardPage() {
                   <div className="text-3xl font-bold text-slate-800">{stats.activeJobs}</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-slate-200 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-slate-500">Total Applicants</CardTitle>
@@ -164,7 +164,7 @@ export default function EmployerDashboardPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-700">You haven't posted any jobs yet.</h3>
                 <p className="text-slate-500 mt-2 mb-6">Create your first vacancy to start receiving AI-matched applicants.</p>
-                
+
                 <Link to="/employer/jobs/create">
                   <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Create Your First Vacancy</Button>
                 </Link>
@@ -202,20 +202,23 @@ export default function EmployerDashboardPage() {
                             )}
                           </td>
                           <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                            
+
                             <Link to={`/employer/jobs/edit/${vacancy.id}`}>
                               <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 shadow-none">
                                 Edit
                               </Button>
                             </Link>
 
-                            <Button size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-none">
-                              View Applicants
-                            </Button>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            {/* UPDATED: Link to the new Applicant Ranking Page */}
+                            <Link to={`/employer/jobs/${vacancy.id}/applicants`}>
+                              <Button size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-none">
+                                View Applicants
+                              </Button>
+                            </Link>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                               onClick={() => handleDeleteVacancy(vacancy.id)}
                               disabled={deletingId === vacancy.id}
