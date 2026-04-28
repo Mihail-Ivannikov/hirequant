@@ -48,3 +48,5 @@ logs/
 
 # --- NestJS specific ---
 /dist/
+
+/apps/backend/uploads/

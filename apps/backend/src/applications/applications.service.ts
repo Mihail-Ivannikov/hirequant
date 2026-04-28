@@ -1,9 +1,13 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter'; // <-- ADDED FOR BACKGROUND AI TASK
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2 // <-- ADDED FOR BACKGROUND AI TASK
+  ) {}
 
   async apply(auth0Id: string, vacancyId: string, data: any, file?: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
@@ -31,7 +35,7 @@ export class ApplicationsService {
       throw new BadRequestException("A file was expected but not provided for the 'upload' option.");
     }
 
-    return this.prisma.application.create({
+    const application = await this.prisma.application.create({
       data: {
         vacancyId: vacancyId,
         candidateId: profile.id,
@@ -41,6 +45,21 @@ export class ApplicationsService {
         status: 'PENDING'
       }
     });
+
+    // =========================================================================
+    // NEW LOGIC: Trigger Background AI Vector Analysis without delaying user
+    // =========================================================================
+    if (file) {
+      this.eventEmitter.emit('cv.uploaded', {
+        applicationId: application.id,
+        vacancyId: vacancyId,
+        candidateProfileId: profile.id,
+        filePath: file.path
+      });
+    }
+    // =========================================================================
+
+    return application;
   }
 
   async getMyApplications(auth0Id: string) {
@@ -114,7 +133,7 @@ export class ApplicationsService {
     const applicants = await Promise.all(vacancy.applications.map(async (app) => {
         let aiScore = app.aiScore;
         let matchedSkills: string[] =[];
-        let missingSkills: string[] = [...vacancy.skills];
+        let missingSkills: string[] =[...vacancy.skills];
 
         if (app.candidate.skills && app.candidate.skills.length > 0) {
             matchedSkills = vacancy.skills.filter(s =>
@@ -173,7 +192,6 @@ export class ApplicationsService {
     };
   }
 
-
   async getApplicationDetails(auth0Id: string, applicationId: string) {
     const user = await this.prisma.user.findUnique({ where: { auth0Id } });
     if (!user || user.role !== 'EMPLOYER') throw new ForbiddenException("Access denied");
@@ -190,7 +208,7 @@ export class ApplicationsService {
       throw new ForbiddenException("Access denied");
     }
 
-    let matchedSkills: string[] = [];
+    let matchedSkills: string[] =[];
     let missingSkills: string[] =[...application.vacancy.skills];
 
     if (application.candidate.skills && application.candidate.skills.length > 0) {

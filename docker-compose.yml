@@ -13,5 +13,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: hr-helper-backend
+    restart: always
+    depends_on:
+      - db
+      - python-ai
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./apps/backend/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/recruitment_db
+    volumes:
+      - ./apps/backend/uploads:/app/uploads
+      
+  python-ai:
+    build:
+      context: ./apps/python_ai
+      dockerfile: Dockerfile
+    container_name: hr-helper-ai
+    restart: always
+    ports:
+      - "8000:8000"
+
 volumes:
   postgres_data:

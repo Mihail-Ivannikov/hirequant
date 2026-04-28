@@ -8,14 +8,20 @@ import { VacanciesModule } from './vacancies/vacancies.module';
 import { UsersModule } from './users/users.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CvAnalysisModule } from './cv-analysis/cv-analysis.module';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), 
+    EventEmitterModule.forRoot(),
     AuthModule,
     VacanciesModule,
     UsersModule,
     ApplicationsModule,
     TelegramModule,
+    CvAnalysisModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

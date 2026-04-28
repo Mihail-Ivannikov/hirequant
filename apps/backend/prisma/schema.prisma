@@ -7,18 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model MasterSkill {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model User {
   id          String    @id @default(cuid())
   email       String    @unique
   auth0Id     String    @unique
   role        Role      @default(CANDIDATE)
-  companyName String?   // Added to store Employer's company name
+  companyName String?   
   profile     CandidateProfile?
   vacancies   Vacancy[] @relation("EmployerVacancies")
   messages    Message[] @relation("UserMessages")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   phoneAuth   UserAuth?
 }
 
@@ -85,7 +90,7 @@ model Application {
   status      ApplicationStatus @default(PENDING)
   coverLetter String?           @db.Text
   testScore   Int?
-  aiScore     Int?              // Added for AI Semantic Ranking
+  aiScore     Int?              
   resumeUrl   String?
   candidateId String
   candidate   CandidateProfile  @relation(fields: [candidateId], references:[id], onDelete: Cascade)
