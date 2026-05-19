@@ -119,7 +119,6 @@ export default function VacancyDetailsPage() {
       }
     };
 
-    // If we have an application, but the AI score is null, check DB every 3 seconds
     if (myApplication && myApplication.aiScore === null) {
       intervalId = setInterval(pollAiScore, 3000);
     }
@@ -204,7 +203,6 @@ export default function VacancyDetailsPage() {
               </div>
             </div>
 
-            {/* EXACT FIX: Only show Compatibility Profile if the user has applied */}
             {myApplication && (
               <div className="rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/50 to-white p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">

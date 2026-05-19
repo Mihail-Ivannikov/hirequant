@@ -1,12 +1,12 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { EventEmitter2 } from '@nestjs/event-emitter'; // <-- ADDED FOR BACKGROUND AI TASK
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ApplicationsService {
   constructor(
     private prisma: PrismaService,
-    private eventEmitter: EventEmitter2 // <-- ADDED FOR BACKGROUND AI TASK
+    private eventEmitter: EventEmitter2
   ) {}
 
   async apply(auth0Id: string, vacancyId: string, data: any, file?: Express.Multer.File) {
@@ -46,12 +46,23 @@ export class ApplicationsService {
       }
     });
 
+
+    let targetFilePath: string | null = null;
+
     if (file) {
+      targetFilePath = file.path;
+    } else if (data.resumeOption === 'profile' && profile.resumeUrl) {
+      targetFilePath = profile.resumeUrl.startsWith('uploads/') 
+        ? profile.resumeUrl 
+        : `uploads/${profile.resumeUrl}`;
+    }
+
+    if (targetFilePath) {
       this.eventEmitter.emit('cv.uploaded', {
         applicationId: application.id,
         vacancyId: vacancyId,
         candidateProfileId: profile.id,
-        filePath: file.path
+        filePath: targetFilePath
       });
     }
 
@@ -240,7 +251,7 @@ export class ApplicationsService {
         fullName: application.candidate.fullName,
         headline: application.candidate.headline,
         avatarUrl: application.candidate.avatarUrl,
-        phone: application.candidate.phone, // EXACT FIX: Added missing fields
+        phone: application.candidate.phone,
         location: application.candidate.location,
         githubUrl: application.candidate.githubUrl,
         linkedInUrl: application.candidate.linkedInUrl,
@@ -280,4 +291,31 @@ export class ApplicationsService {
 
     return { success: true, status: updatedApp.status };
   }
+
+  async deleteMyApplication(auth0Id: string, applicationId: string) {
+    const user = await this.prisma.user.findUnique({ 
+      where: { auth0Id }, 
+      include: { profile: true } 
+    });
+    
+    if (!user || !user.profile) throw new BadRequestException('User profile not found');
+
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId }
+    });
+
+    if (!application) throw new BadRequestException('Application not found');
+
+    if (application.candidateId !== user.profile.id) {
+      throw new ForbiddenException('You can only delete your own applications');
+    }
+
+    await this.prisma.application.delete({
+      where: { id: applicationId }
+    });
+
+    return { success: true, message: 'Application withdrawn successfully' };
+  }
+
+
 }

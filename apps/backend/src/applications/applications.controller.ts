@@ -81,4 +81,11 @@ export class ApplicationsController {
   async updateApplicationStatus(@Req() req, @Param('id') applicationId: string, @Body('status') status: string) {
     return this.applicationsService.updateApplicationStatus(req.user.auth0Id, applicationId, status);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/applications/:id/withdraw')
+  async withdrawMyApplication(@Req() req, @Param('id') applicationId: string) {
+    return this.applicationsService.deleteMyApplication(req.user.auth0Id, applicationId);
+  }
+
 }

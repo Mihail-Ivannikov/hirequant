@@ -5,9 +5,11 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Briefcase, MessageSquare, ExternalLink } from "lucide-react";
+import { Loader2, Briefcase, MessageSquare, ExternalLink, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ChatModal } from "@/components/applications/ChatModal";
+import { useToast } from "@/hooks/use-toast";
+
 
 type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
@@ -25,6 +27,8 @@ export default function MyApplicationsPage() {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
   
   const [filter, setFilter] = useState<'ALL' | ApplicationStatus>('ALL');
   const [sortBy, setSortBy] = useState<'UPDATED' | 'STATUS'>('UPDATED');
@@ -50,6 +54,24 @@ export default function MyApplicationsPage() {
     };
     fetchApps();
   },[isAuthenticated, getAccessTokenSilently]);
+
+  const handleWithdraw = async (applicationId: string) => {
+    if (!window.confirm("Are you sure you want to withdraw this application? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const token = await getAccessTokenSilently();
+      await api.post(`/vacancies/me/applications/${applicationId}/withdraw`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setApplications(prev => prev.filter(app => app.id !== applicationId));
+      toast({ title: "Application Withdrawn", description: "Your application has been successfully removed." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to withdraw application." });
+    }
+  };
 
   const filteredAndSorted = applications
     .filter(app => filter === 'ALL' ? true : app.status === filter)
@@ -146,6 +168,16 @@ export default function MyApplicationsPage() {
                             </span>
                           )}
                         </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleWithdraw(app.id)}
+                          className="w-10 h-10 p-0 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0"
+                          title="Withdraw Application"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+
                       </div>
                     </div>
                   </CardContent>
