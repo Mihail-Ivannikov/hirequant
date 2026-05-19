@@ -1,10 +1,3 @@
-"""
-Strict Anti-Hallucination Semantic AI Engine (Bulletproof Edition)
-Architecture: Object-Oriented Microservice
-Core Technologies: FastAPI, PyTorch, HuggingFace Transformers, Spacy
-Author: Senior AI Architect
-"""
-
 import logging
 import re
 import math

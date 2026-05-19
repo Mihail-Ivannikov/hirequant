@@ -46,9 +46,6 @@ export class ApplicationsService {
       }
     });
 
-    // =========================================================================
-    // NEW LOGIC: Trigger Background AI Vector Analysis without delaying user
-    // =========================================================================
     if (file) {
       this.eventEmitter.emit('cv.uploaded', {
         applicationId: application.id,
@@ -57,7 +54,6 @@ export class ApplicationsService {
         filePath: file.path
       });
     }
-    // =========================================================================
 
     return application;
   }
@@ -69,16 +65,39 @@ export class ApplicationsService {
     });
     if (!user || !user.profile) throw new BadRequestException('User profile not found');
 
-    return this.prisma.application.findMany({
+    const applications = await this.prisma.application.findMany({
       where: { candidateId: user.profile.id },
       include: {
-        vacancy: { select: { title: true, company: true, id: true } },
+        vacancy: { select: { title: true, company: true, id: true, skills: true } },
+        candidate: { select: { skills: true } },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1
         }
       },
       orderBy: { updatedAt: 'desc' }
+    });
+
+    return applications.map(app => {
+      let matchedSkills: string[] =[];
+      let missingSkills: string[] = [...(app.vacancy?.skills || [])];
+
+      if (app.candidate?.skills && app.candidate.skills.length > 0) {
+        matchedSkills = (app.vacancy?.skills ||[]).filter(s =>
+          app.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
+        );
+        missingSkills = (app.vacancy?.skills ||[]).filter(s =>
+          !app.candidate.skills.some(cs => cs.toLowerCase() === s.toLowerCase())
+        );
+      }
+
+      return {
+        ...app,
+        insights: {
+          matchedSkills,
+          missingSkills
+        }
+      };
     });
   }
 
@@ -144,21 +163,6 @@ export class ApplicationsService {
             );
         }
 
-        if (aiScore === null) {
-            const skillScore = vacancy.skills.length > 0
-                ? Math.round((matchedSkills.length / vacancy.skills.length) * 100)
-                : 85;
-
-            aiScore = app.testScore !== null
-                ? Math.round((skillScore * 0.7) + (app.testScore * 0.3))
-                : skillScore;
-
-            await this.prisma.application.update({
-                where: { id: app.id },
-                data: { aiScore }
-            });
-        }
-
         return {
             id: app.id,
             status: app.status,
@@ -220,8 +224,8 @@ export class ApplicationsService {
       );
     }
 
-    const actualResumeUrl = application.resumeUrl === 'profile-linked' 
-      ? application.candidate.resumeUrl 
+    const actualResumeUrl = application.resumeUrl === 'profile-linked'
+      ? application.candidate.resumeUrl
       : application.resumeUrl;
 
     return {
@@ -262,7 +266,7 @@ export class ApplicationsService {
       throw new ForbiddenException("Access denied");
     }
 
-    const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED'];
+    const validStatuses =['PENDING', 'ACCEPTED', 'REJECTED'];
     if (!validStatuses.includes(status)) throw new BadRequestException("Invalid status");
 
     const updatedApp = await this.prisma.application.update({

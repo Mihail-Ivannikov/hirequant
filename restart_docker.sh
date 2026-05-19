@@ -11,7 +11,7 @@ cd ../../../
 
 docker-compose down
 docker volume rm hr_helper_postgres_data
-docker-compose up -d
+docker-compose up -d --build
 
 sleep 5
 

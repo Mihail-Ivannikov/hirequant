@@ -7,17 +7,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, Sparkles, Loader2, Users, CheckCircle2, 
-  XCircle, BrainCircuit, User, Calendar, ChevronRight 
+import {
+  ArrowLeft, Sparkles, Loader2, Users, CheckCircle2,
+  XCircle, BrainCircuit, User, Calendar, ChevronRight
 } from "lucide-react";
 
 // Custom SVG Radial Progress Component for high visual impact
-const CircularProgress = ({ value }: { value: number }) => {
+const CircularProgress = ({ value }: { value: number | null }) => {
+  // EXACT FIX: Handled the "null" processing state visually
+  if (value === null) {
+    return (
+      <div className="relative flex flex-col items-center justify-center w-24 h-24 bg-slate-50 rounded-full border border-slate-100 shadow-inner">
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mb-1" />
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center leading-tight">AI<br/>Pending</span>
+      </div>
+    );
+  }
+
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (value / 100) * circumference;
-  
+
   let color = "text-red-500";
   if (value >= 90) color = "text-emerald-500";
   else if (value >= 70) color = "text-yellow-500";
@@ -40,7 +50,7 @@ interface RankedApplicant {
   status: string;
   createdAt: string;
   testScore: number | null;
-  aiScore: number;
+  aiScore: number | null;
   candidate: {
     id: string;
     fullName: string;
@@ -64,7 +74,7 @@ interface VacancyData {
 export default function ApplicantRankingPage() {
   const { id } = useParams();
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
-  
+
   const[data, setData] = useState<{ vacancy: VacancyData, applicants: RankedApplicant[] } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -101,14 +111,13 @@ export default function ApplicantRankingPage() {
   }
 
   if (!data) return null;
-
-  // AI defines "Top Matches" as score >= 70% OR the Top 10 candidates if scores are generally low
-  const topMatches = data.applicants.filter((app, idx) => app.aiScore >= 70 || idx < 10);
+  
+  const topMatches = data.applicants.filter((app, idx) => (app.aiScore !== null && app.aiScore >= 70) || idx < 10);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-32">
       <Header />
-      
+
       {/* Job Context Header */}
       <header className="bg-white border-b border-slate-200 py-6 mb-8">
         <div className="container mx-auto px-4 max-w-6xl">
@@ -143,7 +152,7 @@ export default function ApplicantRankingPage() {
           </TabsList>
 
           <TabsContent value="top-matches" className="space-y-6">
-            
+
             <div className="flex items-start gap-4 p-5 bg-indigo-50 rounded-xl border border-indigo-100 text-indigo-900 shadow-sm">
               <div className="bg-indigo-600 p-2 rounded-lg shadow-inner"><Sparkles className="h-6 w-6 text-white" /></div>
               <div>
@@ -161,9 +170,9 @@ export default function ApplicantRankingPage() {
               topMatches.map((app, index) => (
                 <Card key={app.id} className="overflow-hidden border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 relative group bg-white">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-500 to-purple-600 opacity-70 group-hover:opacity-100 transition-opacity" />
-                  
+
                   <CardContent className="p-6 sm:p-8 flex flex-col lg:flex-row items-center gap-8">
-                    
+
                     {/* Rank & Profile Info */}
                     <div className="flex items-center gap-6 w-full lg:w-1/3">
                       <div className="flex-shrink-0 flex flex-col items-center justify-center w-12">
@@ -194,12 +203,13 @@ export default function ApplicantRankingPage() {
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5 block">AI Skill Analysis</span>
                         <div className="flex flex-wrap gap-2">
-                          {app.insights.matchedSkills.length === 0 && app.insights.missingSkills.length === 0 && <span className="text-sm text-slate-400">No specific skills analyzed.</span>}
-                          {app.insights.matchedSkills.map(s => <Badge key={s} variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1"><CheckCircle2 className="h-3 w-3 mr-1.5" />{s}</Badge>)}
-                          {app.insights.missingSkills.map(s => <Badge key={s} variant="outline" className="bg-slate-50 text-slate-400 border border-slate-200 px-2 py-1"><XCircle className="h-3 w-3 mr-1.5" />{s}</Badge>)}
+                          {app.aiScore === null && <span className="text-sm text-slate-400 flex items-center"><Loader2 className="h-3 w-3 animate-spin mr-2" /> Extracting skills...</span>}
+                          {app.aiScore !== null && app.insights.matchedSkills.length === 0 && app.insights.missingSkills.length === 0 && <span className="text-sm text-slate-400">No specific skills analyzed.</span>}
+                          {app.aiScore !== null && app.insights.matchedSkills.map(s => <Badge key={s} variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1"><CheckCircle2 className="h-3 w-3 mr-1.5" />{s}</Badge>)}
+                          {app.aiScore !== null && app.insights.missingSkills.map(s => <Badge key={s} variant="outline" className="bg-slate-50 text-slate-400 border border-slate-200 px-2 py-1"><XCircle className="h-3 w-3 mr-1.5" />{s}</Badge>)}
                         </div>
                       </div>
-                      
+
                       {app.testScore !== null && (
                         <div>
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Fit Questionnaire Verification</span>
@@ -255,9 +265,16 @@ export default function ApplicantRankingPage() {
                              {app.candidate.fullName}
                           </td>
                           <td className="px-6 py-4">
-                             <Badge variant="outline" className={`font-black px-2.5 py-1 border ${app.aiScore >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : app.aiScore >= 70 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                               {app.aiScore}% Match
-                             </Badge>
+                             {/* EXACT FIX: Added visual spinner for table view when AI is pending */}
+                             {app.aiScore !== null ? (
+                                <Badge variant="outline" className={`font-black px-2.5 py-1 border ${app.aiScore >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : app.aiScore >= 70 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                                  {app.aiScore}% Match
+                                </Badge>
+                             ) : (
+                                <Badge variant="outline" className="font-black px-2.5 py-1 border bg-slate-50 text-slate-500 border-slate-200">
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1.5 inline-block" /> Processing
+                                </Badge>
+                             )}
                           </td>
                           <td className="px-6 py-4">
                              <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold px-3">{app.status}</Badge>

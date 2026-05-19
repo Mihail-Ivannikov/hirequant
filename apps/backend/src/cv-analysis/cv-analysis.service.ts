@@ -77,7 +77,6 @@ export class CvAnalysisService {
     try {
       const dataBuffer = await fs.readFile(filePath);
       
-      // @ts-ignore
       const rawPdfParse = require('pdf-parse');
       
       if (rawPdfParse.PDFParse) {

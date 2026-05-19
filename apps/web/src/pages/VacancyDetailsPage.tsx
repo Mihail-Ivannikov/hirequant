@@ -31,8 +31,6 @@ interface JobDetail {
   postedAt: string;
   description: string;
   skills: string[];
-  matchScore?: number;
-  missingSkills?: string[];
 }
 
 export default function VacancyDetailsPage() {
@@ -46,6 +44,7 @@ export default function VacancyDetailsPage() {
   } = useAuth0();
 
   const [job, setJob] = useState<JobDetail | null>(null);
+  const [myApplication, setMyApplication] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -75,9 +74,20 @@ export default function VacancyDetailsPage() {
           }),
           description: data.description,
           skills: data.skills,
-          matchScore: 85,
-          missingSkills: ["Docker", "Kubernetes"],
         });
+
+        // EXACT FIX: Fetch user's applications to see if they already applied to this job
+        if (isAuthenticated) {
+          try {
+            const appsResponse = await api.get('/vacancies/me/applications', { headers });
+            const applied = appsResponse.data.find((a: any) => a.vacancyId === id);
+            if (applied) {
+              setMyApplication(applied);
+            }
+          } catch (e) {
+            // Employer role will error here, which is fine to ignore
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch job details", error);
       } finally {
@@ -87,6 +97,37 @@ export default function VacancyDetailsPage() {
 
     fetchJobDetails();
   }, [id, isAuthenticated, isAuthLoading, getAccessTokenSilently]);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    const pollAiScore = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const token = await getAccessTokenSilently();
+        const headers = { Authorization: `Bearer ${token}` };
+        const appsResponse = await api.get('/vacancies/me/applications', { headers });
+        const applied = appsResponse.data.find((a: any) => a.vacancyId === id);
+        
+        // If the AI has finally injected the score, update the UI and stop polling!
+        if (applied && applied.aiScore !== null) {
+          setMyApplication(applied);
+          clearInterval(intervalId);
+        }
+      } catch (e) {
+        console.error("Polling failed", e);
+      }
+    };
+
+    // If we have an application, but the AI score is null, check DB every 3 seconds
+    if (myApplication && myApplication.aiScore === null) {
+      intervalId = setInterval(pollAiScore, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [myApplication, id, isAuthenticated, getAccessTokenSilently]);
 
   const handleApplyClick = () => {
     if (!isAuthenticated) {
@@ -163,82 +204,96 @@ export default function VacancyDetailsPage() {
               </div>
             </div>
 
-            {job.matchScore && (
+            {/* EXACT FIX: Only show Compatibility Profile if the user has applied */}
+            {myApplication && (
               <div className="rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/50 to-white p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-6">
-                  <Sparkles className="h-5 w-5 text-indigo-600" />
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Your Compatibility Profile
-                  </h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-indigo-600" />
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Your Compatibility Profile
+                    </h2>
+                  </div>
+                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">Application Submitted</Badge>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="relative h-32 w-32 flex-shrink-0">
-                    <svg
-                      className="h-full w-full -rotate-90"
-                      viewBox="0 0 36 36"
-                    >
-                      <path
-                        className="text-slate-200"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                      />
-                      <path
-                        className="text-indigo-600"
-                        strokeDasharray={`${job.matchScore}, 100`}
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-indigo-700">
-                        {job.matchScore}%
-                      </span>
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
-                        Match
-                      </span>
-                    </div>
+                  <div className="relative h-32 w-32 flex-shrink-0 flex items-center justify-center">
+                    {myApplication.aiScore !== null ? (
+                      <>
+                        <svg className="h-full w-full -rotate-90 absolute inset-0" viewBox="0 0 36 36">
+                          <path
+                            className="text-slate-200"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                          />
+                          <path
+                            className="text-indigo-600"
+                            strokeDasharray={`${myApplication.aiScore}, 100`}
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-2xl font-bold text-indigo-700">
+                            {myApplication.aiScore}%
+                          </span>
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                            Match
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-2" />
+                        <span className="text-xs font-bold text-slate-500">Processing AI...</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-slate-900">
-                        Matched Skills
-                      </h3>
-                      <div className="space-y-1">
-                        {job.skills.slice(0, 3).map((skill) => (
-                          <div
-                            key={skill}
-                            className="flex items-center gap-2 text-sm text-slate-600"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />{" "}
-                            {skill}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {job.missingSkills && (
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-slate-900">
-                          Missing Skills
-                        </h3>
-                        <div className="space-y-1">
-                          {job.missingSkills.map((skill) => (
-                            <div
-                              key={skill}
-                              className="flex items-center gap-2 text-sm text-slate-600"
-                            >
-                              <XCircle className="h-4 w-4 text-red-400" />{" "}
-                              {skill}
+                    {(() => {
+                      const matched = myApplication.insights?.matchedSkills ||[];
+                      const missing = myApplication.insights?.missingSkills ||[];
+
+                      return (
+                        <>
+                          <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-slate-900">
+                              Matched Skills
+                            </h3>
+                            <div className="space-y-1">
+                              {myApplication.aiScore === null && <span className="text-sm text-slate-400">Analyzing CV...</span>}
+                              {myApplication.aiScore !== null && matched.length === 0 && <span className="text-sm text-slate-400">None found.</span>}
+                              {myApplication.aiScore !== null && matched.map((skill) => (
+                                <div key={skill} className="flex items-center gap-2 text-sm text-slate-600">
+                                  <CheckCircle2 className="h-4 w-4 text-green-500" /> {skill}
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-slate-900">
+                              Missing Skills
+                            </h3>
+                            <div className="space-y-1">
+                              {myApplication.aiScore === null && <span className="text-sm text-slate-400">Analyzing CV...</span>}
+                              {myApplication.aiScore !== null && missing.length === 0 && <span className="text-sm text-slate-400">Perfect match!</span>}
+                              {myApplication.aiScore !== null && missing.map((skill) => (
+                                <div key={skill} className="flex items-center gap-2 text-sm text-slate-600">
+                                  <XCircle className="h-4 w-4 text-red-400" /> {skill}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -250,34 +305,7 @@ export default function VacancyDetailsPage() {
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 About the Role
               </h3>
-              <p className="mb-6 leading-relaxed">{job.description}</p>
-
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Responsibilities
-              </h3>
-              <ul className="list-disc pl-5 mb-6 space-y-1">
-                <li>Design and implement scalable frontend architectures.</li>
-                <li>
-                  Collaborate with cross-functional teams to define, design, and
-                  ship new features.
-                </li>
-                <li>
-                  Ensure high performance and responsiveness of applications.
-                </li>
-              </ul>
-
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Requirements
-              </h3>
-              <ul className="list-disc pl-5 mb-6 space-y-1">
-                <li>5+ years of experience with React and TypeScript.</li>
-                <li>
-                  Strong understanding of modern CSS and UI/UX principles.
-                </li>
-                <li>
-                  Experience with server-side rendering (Next.js) is a plus.
-                </li>
-              </ul>
+              <p className="mb-6 leading-relaxed whitespace-pre-wrap">{job.description}</p>
             </div>
           </div>
 
@@ -286,10 +314,11 @@ export default function VacancyDetailsPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <Button
                   size="lg"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg h-12 mb-3"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-lg h-12 mb-3 disabled:opacity-50"
                   onClick={handleApplyClick}
+                  disabled={!!myApplication}
                 >
-                  Apply Now
+                  {myApplication ? "Already Applied" : "Apply Now"}
                 </Button>
                 <Button variant="outline" className="w-full text-slate-600">
                   <Bookmark className="mr-2 h-4 w-4" />
