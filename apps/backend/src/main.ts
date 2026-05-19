@@ -10,6 +10,9 @@ async function bootstrap() {
 
   app.use(helmet({
     crossOriginResourcePolicy: false,
+    contentSecurityPolicy: false, 
+    crossOriginEmbedderPolicy: false,
+    frameguard: false,      
   }));
 
   app.enableCors({

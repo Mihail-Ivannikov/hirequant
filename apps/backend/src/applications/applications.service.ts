@@ -240,6 +240,10 @@ export class ApplicationsService {
         fullName: application.candidate.fullName,
         headline: application.candidate.headline,
         avatarUrl: application.candidate.avatarUrl,
+        phone: application.candidate.phone, // EXACT FIX: Added missing fields
+        location: application.candidate.location,
+        githubUrl: application.candidate.githubUrl,
+        linkedInUrl: application.candidate.linkedInUrl,
       },
       vacancy: {
         id: application.vacancy.id,

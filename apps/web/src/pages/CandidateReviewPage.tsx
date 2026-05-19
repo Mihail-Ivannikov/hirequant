@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ChatInterface } from "@/components/applications/ChatInterface";
-import { 
-  ArrowLeft, Loader2, CheckCircle2, XCircle, BrainCircuit, 
-  Download, FileText, UserCheck, UserX, MessageSquare
+import {
+  ArrowLeft, Loader2, CheckCircle2, XCircle, BrainCircuit,
+  Download, FileText, UserCheck, UserX, MessageSquare,
+  MapPin, Phone, Github, Linkedin
 } from "lucide-react";
 
 const CircularProgress = ({ value }: { value: number }) => {
@@ -44,6 +45,10 @@ interface ApplicationDetails {
   candidate: {
     fullName: string;
     headline: string;
+    phone?: string | null;
+    location?: string | null;
+    githubUrl?: string | null;
+    linkedInUrl?: string | null;
   };
   vacancy: {
     id: string;
@@ -127,7 +132,27 @@ export default function CandidateReviewPage() {
           </Link>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">{app.candidate.fullName}</h1>
-            <p className="text-xs font-bold text-slate-400 tracking-wider uppercase mt-0.5">Applying for: {app.vacancy.title}</p>
+            <p className="text-xs font-bold text-slate-400 tracking-wider uppercase mt-0.5 mb-2">Applying for: {app.vacancy.title}</p>
+            
+            {/* EXACT FIX: Displays all the newly fetched candidate details beautifully */}
+            <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
+              {app.candidate.location && (
+                <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-slate-400"/> {app.candidate.location}</span>
+              )}
+              {app.candidate.phone && (
+                <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-400"/> {app.candidate.phone}</span>
+              )}
+              {app.candidate.githubUrl && (
+                <a href={app.candidate.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors">
+                  <Github className="h-3.5 w-3.5 text-slate-400"/> GitHub
+                </a>
+              )}
+              {app.candidate.linkedInUrl && (
+                <a href={app.candidate.linkedInUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+                  <Linkedin className="h-3.5 w-3.5 text-slate-400"/> LinkedIn
+                </a>
+              )}
+            </div>
           </div>
         </div>
         

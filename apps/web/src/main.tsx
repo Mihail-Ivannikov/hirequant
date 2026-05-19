@@ -4,14 +4,12 @@ import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { Auth0Provider, AppState } from '@auth0/auth0-react';
 import App from './App.tsx';
 import './index.css';
-import { AuthSync } from './components/auth/AuthSync'; // <-- IMPORTED HERE
+import { AuthSync } from './components/auth/AuthSync'; 
 
-// Create a wrapper to handle Auth0's redirect callback
 const Auth0ProviderWithRedirectCallback = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   const onRedirectCallback = (appState?: AppState) => {
-    // Navigate to the stored return URL (like /jobs/:id/apply) or default to /jobs
     navigate(appState?.returnTo || window.location.pathname);
   };
 
