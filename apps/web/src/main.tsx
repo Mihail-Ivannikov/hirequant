@@ -22,7 +22,7 @@ const Auth0ProviderWithRedirectCallback = ({ children }: { children: React.React
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
         scope: "openid profile email offline_access" 
       }}
-      cacheLocation="memory" 
+      cacheLocation="localstorage" 
       useRefreshTokens={true}
       onRedirectCallback={onRedirectCallback}
     >
