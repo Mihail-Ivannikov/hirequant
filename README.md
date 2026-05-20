@@ -1,6 +1,31 @@
 # HireQuant
 
+## Project Structure: Where to Find Everything
+### `apps/` Directory Breakdown
 
+*   ### `apps/backend/` — The Server (NestJS)
+        *   API Endpoints: `apps/backend/src/` (e.g., `applications.controller.ts`, `vacancies.controller.ts`)
+        *   Database Schema: `apps/backend/prisma/schema.prisma`
+        *   Business Logic: `apps/backend/src/` (e.g., `applications.service.ts`)
+        *   Database Seeding Script: `apps/backend/prisma/seed.ts`
+        *   Backend Docker Configuration: `apps/backend/Dockerfile`
+
+*   ### `apps/web/` — The Frontend (React)
+        *   UI Components: `apps/web/src/components/`
+        *   Application Pages: `apps/web/src/pages/` (e.g., `VacancyDetailsPage.tsx`, `EmployerDashboardPage.tsx`)
+        *   React Routing: `apps/web/src/App.tsx`
+        *   API Request Logic: `apps/web/src/lib/api.ts`
+        *   Frontend Docker & Nginx Configuration: `apps/web/Dockerfile` and `apps/web/nginx.conf`
+
+*   ### `apps/python_ai/` — The AI Microservice
+        *   The Core AI Logic: `apps/python_ai/main.py` (This file contains the vector math, semantic similarity, and scoring algorithms).
+        *   Python Dependencies: `apps/python_ai/requirements.txt`
+        *   AI Docker Configuration: `apps/python_ai/Dockerfile`
+
+*   ### Root Directory (`/`)
+        *   **Orchestration:** `docker-compose.yml.
+        *   **Environment Configuration:** `.env`.
+        *   **Monorepo Configuration:** `pnpm-workspace.yaml`
 
 ## Stack
 
