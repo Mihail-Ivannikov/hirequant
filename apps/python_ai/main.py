@@ -269,7 +269,7 @@ def analyze_endpoint(request: AnalyzeRequest):
         logger.info(f" -> Semantic Context Score: {sem_pct:.2f}% (Raw Matrix Peak: {raw_doc:.4f})")
         
         if len(safe_skills) > 0 and len(all_extracted) == 0:
-            logger.warning("CHICKEN SOUP ANNIHILATOR TRIGGERED!")
+            
             logger.warning("CV text shows ZERO technical relation to the required skills.")
             logger.warning("Applying MAXIMUM PENALTY -> Final Score locked to 0%.")
             
