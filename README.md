@@ -17,7 +17,7 @@
         *   API Request Logic: `apps/web/src/lib/api.ts`
         *   Frontend Docker & Nginx Configuration: `apps/web/Dockerfile` and `apps/web/nginx.conf`
 
-*   ### `apps/python_ai/` — The AI Microservice
+*   ### `apps/python_ai/` — The "AI" service
         *   The Core AI Logic: `apps/python_ai/main.py` (This file contains the vector math, semantic similarity, and scoring algorithms).
         *   Python Dependencies: `apps/python_ai/requirements.txt`
         *   AI Docker Configuration: `apps/python_ai/Dockerfile`
