@@ -38,7 +38,7 @@ export function Header() {
           <Link to="/" className="flex items-center gap-2">
             <BrainCircuit className="h-6 w-6 text-indigo-600" />
             <span className="text-xl font-bold tracking-tight text-slate-900">
-              SmartRecruit<span className="text-indigo-600">AI</span>
+              Hire<span className="text-indigo-600">Quant</span>
             </span>
           </Link>
 
