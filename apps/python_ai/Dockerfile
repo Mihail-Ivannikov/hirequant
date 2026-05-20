@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
-
+RUN useradd -m ai_user
 RUN wget --continue --tries=100 --read-timeout=30 -O "torch-2.1.0+cpu-cp311-cp311-linux_x86_64.whl" "https://download.pytorch.org/whl/cpu/torch-2.1.0%2Bcpu-cp311-cp311-linux_x86_64.whl"
 
 COPY requirements.txt .
@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir https://github.com/explosion/spacy-models/release
 
 COPY . .
 
-EXPOSE 8000
+RUN chown -R ai_user:ai_user /app
+USER ai_user
 
+EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
